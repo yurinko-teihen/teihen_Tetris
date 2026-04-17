@@ -68,13 +68,13 @@ function resizeCanvas() {
     particleCanvas.width = window.innerWidth;
     particleCanvas.height = window.innerHeight;
     
-    // ゲームキャンバスのサイズ調整
-    const maxHeight = window.innerHeight * 0.45;
-    const maxWidth = window.innerWidth * 0.8;
+    // ゲームキャンバスのサイズ調整（スマホ画面を最大限活用）
+    const maxHeight = window.innerHeight * 0.62;
+    const maxWidth = window.innerWidth * 0.75;
     
     const scaleH = maxHeight / (ROWS * BLOCK_SIZE);
     const scaleW = maxWidth / (COLS * BLOCK_SIZE);
-    const scale = Math.min(scaleH, scaleW, 1.2);
+    const scale = Math.min(scaleH, scaleW);
     
     canvas.style.width = `${COLS * BLOCK_SIZE * scale}px`;
     canvas.style.height = `${ROWS * BLOCK_SIZE * scale}px`;

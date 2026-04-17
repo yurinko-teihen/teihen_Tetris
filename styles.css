@@ -166,7 +166,7 @@ html, body {
 
 #game-screen {
     justify-content: flex-start;
-    padding: 10px;
+    padding: 6px 10px;
     background: linear-gradient(180deg, #1a1a2e 0%, #0d1b2a 100%);
 }
 
@@ -174,8 +174,8 @@ html, body {
     display: flex;
     justify-content: space-around;
     width: 100%;
-    max-width: 400px;
-    margin-bottom: 10px;
+    max-width: 500px;
+    margin-bottom: 8px;
 }
 
 .stat-box {
