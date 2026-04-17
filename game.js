@@ -9,6 +9,7 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 28; // ピクセル
 const NEXT_BLOCK_SIZE = 20;
+const ANIMATION_RESET_DELAY = 10; // CSSアニメーション再起動に必要な最小遅延（ミリ秒）
 
 // ゲーム状態
 let canvas, ctx, nextCanvas, nextCtx, particleCanvas, particleCtx;
@@ -686,10 +687,10 @@ function updateQuoteDisplay(quote) {
     const quoteEl = document.getElementById('current-quote');
     quoteEl.textContent = quote;
     quoteEl.style.animation = 'none';
-    // 再アニメーション
+    // CSSアニメーションを再起動するには、一度無効化してブラウザに再描画させる必要がある
     setTimeout(() => {
         quoteEl.style.animation = '';
-    }, 10);
+    }, ANIMATION_RESET_DELAY);
 }
 
 // ============================================
@@ -874,13 +875,18 @@ function drawNextPiece() {
 function createLineParticles(lineY) {
     const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe'];
     
+    // getBoundingClientRect()を使用して正確なキャンバス位置を取得
+    const canvasRect = canvas.getBoundingClientRect();
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+    
     for (let x = 0; x < COLS; x++) {
         const cell = gameBoard[lineY][x];
         if (cell) {
             for (let i = 0; i < 5; i++) {
                 particles.push({
-                    x: (canvas.offsetLeft + x * BLOCK_SIZE * parseFloat(canvas.style.width) / canvas.width) + Math.random() * BLOCK_SIZE,
-                    y: (canvas.offsetTop + lineY * BLOCK_SIZE * parseFloat(canvas.style.height) / canvas.height) + Math.random() * BLOCK_SIZE,
+                    x: canvasRect.left + (x * BLOCK_SIZE * scaleX) + Math.random() * (BLOCK_SIZE * scaleX),
+                    y: canvasRect.top + (lineY * BLOCK_SIZE * scaleY) + Math.random() * (BLOCK_SIZE * scaleY),
                     vx: (Math.random() - 0.5) * 10,
                     vy: (Math.random() - 0.5) * 10 - 5,
                     size: Math.random() * 8 + 4,

@@ -12,6 +12,9 @@ class AudioManager {
         this.bgmOscillators = [];
         this.bgmGain = null;
         this.currentBgmInterval = null;
+        // BGMビート管理用
+        this.bgmBeatIndex = 0;
+        this.bgmSubBeat = 0;
     }
 
     // オーディオコンテキストを初期化（ユーザーインタラクション後に呼ぶ）
@@ -161,62 +164,64 @@ class AudioManager {
     }
 
     // BGM開始
+    // オシレーター作成を減らすため、ビート間隔を長くし、より長い音を使用
     startBGM(level = 1) {
         if (!this.isInitialized) return;
         
         this.stopBGM();
         
         // テンポはレベルに応じて速くなる
-        const baseTempo = 400 - (level * 20);
-        const tempo = Math.max(baseTempo, 200);
+        // 最小間隔を150msに設定してオシレーター作成頻度を抑える
+        const baseTempo = 600 - (level * 30);
+        const tempo = Math.max(baseTempo, 300);
         
-        // 簡単なベースラインパターン
+        // 簡単なベースラインパターン（0は休符）
         const bassPattern = [
-            130.81, 0, 146.83, 0, 164.81, 0, 146.83, 0,  // C3, D3, E3, D3
-            174.61, 0, 196.00, 0, 220.00, 0, 196.00, 0   // F3, G3, A3, G3
+            130.81, 146.83, 164.81, 146.83,  // C3, D3, E3, D3
+            174.61, 196.00, 220.00, 196.00   // F3, G3, A3, G3
         ];
         
         // メロディパターン
         const melodyPattern = [
-            523.25, 0, 587.33, 0, 659.25, 0, 698.46, 0,  // C5, D5, E5, F5
-            783.99, 0, 659.25, 0, 587.33, 0, 523.25, 0   // G5, E5, D5, C5
+            523.25, 587.33, 659.25, 698.46,  // C5, D5, E5, F5
+            783.99, 659.25, 587.33, 523.25   // G5, E5, D5, C5
         ];
         
-        let bassIndex = 0;
-        let melodyIndex = 0;
-        let beat = 0;
+        // インデックスをリセット
+        this.bgmBeatIndex = 0;
+        this.bgmSubBeat = 0;
         
         this.currentBgmInterval = setInterval(() => {
             if (this.isMuted) return;
             
-            // ベース
+            const beat = this.bgmBeatIndex;
+            
+            // ベース（2ビートごと）
             if (beat % 2 === 0) {
-                const bassFreq = bassPattern[bassIndex % bassPattern.length];
+                const bassFreq = bassPattern[Math.floor(beat / 2) % bassPattern.length];
                 if (bassFreq > 0) {
-                    this.playBgmNote(bassFreq, 0.15, 'triangle', 0.15);
+                    this.playBgmNote(bassFreq, 0.25, 'triangle', 0.15);
                 }
-                bassIndex++;
             }
             
             // メロディ（4ビートごと）
             if (beat % 4 === 0) {
-                const melodyFreq = melodyPattern[melodyIndex % melodyPattern.length];
+                const melodyFreq = melodyPattern[Math.floor(beat / 4) % melodyPattern.length];
                 if (melodyFreq > 0) {
-                    this.playBgmNote(melodyFreq, 0.1, 'sine', 0.1);
+                    this.playBgmNote(melodyFreq, 0.2, 'sine', 0.1);
                 }
-                melodyIndex++;
             }
             
-            // ドラム風
+            // ドラム風（8ビートごと）
             if (beat % 8 === 0) {
-                this.playBgmNote(60, 0.1, 'square', 0.2);
+                this.playBgmNote(60, 0.15, 'square', 0.2);
             }
             if (beat % 4 === 2) {
-                this.playBgmNote(200, 0.05, 'square', 0.1);
+                this.playBgmNote(200, 0.08, 'square', 0.1);
             }
             
-            beat++;
-        }, tempo / 4);
+            this.bgmBeatIndex++;
+        }, tempo);
     }
 
     // BGM用ノート
