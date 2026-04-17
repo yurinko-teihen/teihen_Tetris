@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>底辺テトリス - 名言ブロック</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- スタート画面 -->
+    <div id="start-screen" class="screen">
+        <div class="title-container">
+            <h1 class="game-title">底辺テトリス</h1>
+            <p class="subtitle">〜名言ブロック〜</p>
+        </div>
+        <div class="start-buttons">
+            <button id="start-btn" class="menu-btn pulse">ゲームスタート</button>
+            <button id="how-to-play-btn" class="menu-btn">遊び方</button>
+        </div>
+        <div class="credits">
+            <p>🎮 スマホ縦画面対応</p>
+            <p>🎵 音楽あり</p>
+        </div>
+    </div>
+
+    <!-- 遊び方画面 -->
+    <div id="how-to-screen" class="screen hidden">
+        <h2>遊び方</h2>
+        <div class="instructions">
+            <div class="instruction-item">
+                <span class="icon">👆</span>
+                <p><strong>タップ:</strong> 左右に移動</p>
+            </div>
+            <div class="instruction-item">
+                <span class="icon">👇</span>
+                <p><strong>下スワイプ:</strong> 高速落下</p>
+            </div>
+            <div class="instruction-item">
+                <span class="icon">🔄</span>
+                <p><strong>上スワイプ/タップ:</strong> 回転</p>
+            </div>
+            <div class="instruction-item">
+                <span class="icon">🎯</span>
+                <p><strong>目標:</strong> 10段消してレベルアップ！<br>10レベルでクリア！</p>
+            </div>
+        </div>
+        <button id="back-btn" class="menu-btn">戻る</button>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+            <div class="stat-box">
+                <span class="stat-label">レベル</span>
+                <span id="level" class="stat-value">1</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">スコア</span>
+                <span id="score" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">ライン</span>
+                <span id="lines" class="stat-value">0/10</span>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="next-piece-container">
+                <span class="next-label">次</span>
+                <canvas id="next-canvas"></canvas>
+            </div>
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <div class="current-quote" id="current-quote">
+            「名言がここに表示されます」
+        </div>
+
+        <div class="touch-controls">
+            <div class="control-row">
+                <button id="btn-left" class="control-btn">◀</button>
+                <button id="btn-rotate" class="control-btn rotate-btn">🔄</button>
+                <button id="btn-right" class="control-btn">▶</button>
+            </div>
+            <div class="control-row">
+                <button id="btn-down" class="control-btn down-btn">▼</button>
+                <button id="btn-drop" class="control-btn drop-btn">⏬</button>
+            </div>
+        </div>
+
+        <div class="game-footer">
+            <button id="pause-btn" class="small-btn">⏸️ 一時停止</button>
+            <button id="sound-btn" class="small-btn">🔊 音</button>
+        </div>
+    </div>
+
+    <!-- ポーズ画面 -->
+    <div id="pause-screen" class="screen overlay hidden">
+        <div class="overlay-content">
+            <h2>一時停止</h2>
+            <button id="resume-btn" class="menu-btn">再開</button>
+            <button id="restart-btn" class="menu-btn">最初から</button>
+            <button id="quit-btn" class="menu-btn">タイトルへ</button>
+        </div>
+    </div>
+
+    <!-- ゲームオーバー画面 -->
+    <div id="gameover-screen" class="screen overlay hidden">
+        <div class="overlay-content">
+            <h2 class="gameover-title">ゲームオーバー</h2>
+            <div class="final-stats">
+                <p>レベル: <span id="final-level">1</span></p>
+                <p>スコア: <span id="final-score">0</span></p>
+                <p>消したライン: <span id="final-lines">0</span></p>
+            </div>
+            <div class="final-quote" id="final-quote">
+                「次は頑張ろう」
+            </div>
+            <button id="retry-btn" class="menu-btn">もう一度</button>
+            <button id="title-btn" class="menu-btn">タイトルへ</button>
+        </div>
+    </div>
+
+    <!-- クリア画面 -->
+    <div id="clear-screen" class="screen overlay hidden">
+        <div class="overlay-content celebration">
+            <h2 class="clear-title">🎉 クリア！ 🎉</h2>
+            <div class="final-stats">
+                <p>最終スコア: <span id="clear-score">0</span></p>
+                <p>消したライン: <span id="clear-lines">0</span></p>
+            </div>
+            <div class="clear-message">
+                <p>おめでとう！</p>
+                <p>全レベルクリア！</p>
+            </div>
+            <button id="clear-retry-btn" class="menu-btn">もう一度</button>
+            <button id="clear-title-btn" class="menu-btn">タイトルへ</button>
+        </div>
+    </div>
+
+    <!-- パーティクルキャンバス -->
+    <canvas id="particle-canvas"></canvas>
+
+    <script src="blocks.js"></script>
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

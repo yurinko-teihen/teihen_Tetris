@@ -1,0 +1,953 @@
+/* ============================================
+   底辺テトリス - メインゲームロジック
+   ============================================ */
+
+// ============================================
+// ゲーム設定
+// ============================================
+const COLS = 10;
+const ROWS = 20;
+const BLOCK_SIZE = 28; // ピクセル
+const NEXT_BLOCK_SIZE = 20;
+
+// ゲーム状態
+let canvas, ctx, nextCanvas, nextCtx, particleCanvas, particleCtx;
+let gameBoard = [];
+let currentBlock = null;
+let nextBlock = null;
+let gameInterval = null;
+let gameRunning = false;
+let gamePaused = false;
+
+// スコア関連
+let score = 0;
+let level = 1;
+let linesCleared = 0;
+let totalLinesCleared = 0;
+const MAX_LEVEL = 10;
+const LINES_PER_LEVEL = 10;
+
+// 落下速度（レベルに応じて変化）
+function getDropSpeed() {
+    return Math.max(100, 800 - (level - 1) * 70);
+}
+
+// パーティクルシステム
+let particles = [];
+
+// ============================================
+// 初期化
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    initCanvas();
+    initEventListeners();
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+});
+
+function initCanvas() {
+    canvas = document.getElementById('game-canvas');
+    ctx = canvas.getContext('2d');
+    
+    nextCanvas = document.getElementById('next-canvas');
+    nextCtx = nextCanvas.getContext('2d');
+    
+    particleCanvas = document.getElementById('particle-canvas');
+    particleCtx = particleCanvas.getContext('2d');
+    
+    canvas.width = COLS * BLOCK_SIZE;
+    canvas.height = ROWS * BLOCK_SIZE;
+    
+    nextCanvas.width = 4 * NEXT_BLOCK_SIZE;
+    nextCanvas.height = 4 * NEXT_BLOCK_SIZE;
+}
+
+function resizeCanvas() {
+    // パーティクルキャンバスを画面サイズに合わせる
+    particleCanvas.width = window.innerWidth;
+    particleCanvas.height = window.innerHeight;
+    
+    // ゲームキャンバスのサイズ調整
+    const maxHeight = window.innerHeight * 0.45;
+    const maxWidth = window.innerWidth * 0.8;
+    
+    const scaleH = maxHeight / (ROWS * BLOCK_SIZE);
+    const scaleW = maxWidth / (COLS * BLOCK_SIZE);
+    const scale = Math.min(scaleH, scaleW, 1.2);
+    
+    canvas.style.width = `${COLS * BLOCK_SIZE * scale}px`;
+    canvas.style.height = `${ROWS * BLOCK_SIZE * scale}px`;
+}
+
+// ============================================
+// イベントリスナー
+// ============================================
+function initEventListeners() {
+    // スタート画面
+    document.getElementById('start-btn').addEventListener('click', () => {
+        audioManager.init();
+        audioManager.resume();
+        audioManager.playUIClick();
+        startGame();
+    });
+    
+    document.getElementById('how-to-play-btn').addEventListener('click', () => {
+        audioManager.init();
+        audioManager.playUIClick();
+        showScreen('how-to-screen');
+    });
+    
+    document.getElementById('back-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        showScreen('start-screen');
+    });
+    
+    // ゲーム中のコントロール
+    document.getElementById('btn-left').addEventListener('click', () => moveBlock(-1, 0));
+    document.getElementById('btn-right').addEventListener('click', () => moveBlock(1, 0));
+    document.getElementById('btn-down').addEventListener('click', () => moveBlock(0, 1));
+    document.getElementById('btn-rotate').addEventListener('click', () => rotateBlock());
+    document.getElementById('btn-drop').addEventListener('click', () => hardDrop());
+    
+    // タッチイベントを追加（連打対応）
+    addTouchHold('btn-left', () => moveBlock(-1, 0));
+    addTouchHold('btn-right', () => moveBlock(1, 0));
+    addTouchHold('btn-down', () => moveBlock(0, 1));
+    
+    // ポーズ・サウンド
+    document.getElementById('pause-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        pauseGame();
+    });
+    
+    document.getElementById('sound-btn').addEventListener('click', () => {
+        const isMuted = audioManager.toggleMute();
+        document.getElementById('sound-btn').textContent = isMuted ? '🔇 音' : '🔊 音';
+    });
+    
+    // ポーズ画面
+    document.getElementById('resume-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        resumeGame();
+    });
+    
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        hideScreen('pause-screen');
+        startGame();
+    });
+    
+    document.getElementById('quit-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        quitToTitle();
+    });
+    
+    // ゲームオーバー画面
+    document.getElementById('retry-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        hideScreen('gameover-screen');
+        startGame();
+    });
+    
+    document.getElementById('title-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        quitToTitle();
+    });
+    
+    // クリア画面
+    document.getElementById('clear-retry-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        hideScreen('clear-screen');
+        startGame();
+    });
+    
+    document.getElementById('clear-title-btn').addEventListener('click', () => {
+        audioManager.playUIClick();
+        quitToTitle();
+    });
+    
+    // キーボード操作（PC用）
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // スワイプ操作
+    setupSwipeControls();
+}
+
+// タッチホールド（長押し連打）
+function addTouchHold(elementId, callback) {
+    const element = document.getElementById(elementId);
+    let intervalId = null;
+    
+    const startHold = () => {
+        callback();
+        intervalId = setInterval(callback, 100);
+    };
+    
+    const endHold = () => {
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+    };
+    
+    element.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startHold();
+    });
+    
+    element.addEventListener('touchend', endHold);
+    element.addEventListener('touchcancel', endHold);
+}
+
+// スワイプコントロール
+function setupSwipeControls() {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    
+    canvas.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+    }, { passive: true });
+    
+    canvas.addEventListener('touchend', (e) => {
+        if (!gameRunning || gamePaused) return;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchDuration = Date.now() - touchStartTime;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        const minSwipeDistance = 30;
+        
+        // タップ（短い接触）
+        if (touchDuration < 200 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
+            rotateBlock();
+            return;
+        }
+        
+        // スワイプ判定
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // 横スワイプ
+            if (deltaX > minSwipeDistance) {
+                moveBlock(1, 0);
+            } else if (deltaX < -minSwipeDistance) {
+                moveBlock(-1, 0);
+            }
+        } else {
+            // 縦スワイプ
+            if (deltaY > minSwipeDistance) {
+                hardDrop();
+            } else if (deltaY < -minSwipeDistance) {
+                rotateBlock();
+            }
+        }
+    }, { passive: true });
+}
+
+// キーボード操作
+function handleKeyDown(e) {
+    if (!gameRunning || gamePaused) return;
+    
+    switch (e.key) {
+        case 'ArrowLeft':
+            moveBlock(-1, 0);
+            e.preventDefault();
+            break;
+        case 'ArrowRight':
+            moveBlock(1, 0);
+            e.preventDefault();
+            break;
+        case 'ArrowDown':
+            moveBlock(0, 1);
+            e.preventDefault();
+            break;
+        case 'ArrowUp':
+        case ' ':
+            rotateBlock();
+            e.preventDefault();
+            break;
+        case 'Enter':
+            hardDrop();
+            e.preventDefault();
+            break;
+        case 'Escape':
+        case 'p':
+            pauseGame();
+            e.preventDefault();
+            break;
+    }
+}
+
+// ============================================
+// 画面管理
+// ============================================
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(screen => {
+        if (!screen.classList.contains('overlay')) {
+            screen.classList.add('hidden');
+        }
+    });
+    document.getElementById(screenId).classList.remove('hidden');
+}
+
+function hideScreen(screenId) {
+    document.getElementById(screenId).classList.add('hidden');
+}
+
+function quitToTitle() {
+    stopGame();
+    hideScreen('pause-screen');
+    hideScreen('gameover-screen');
+    hideScreen('clear-screen');
+    showScreen('start-screen');
+}
+
+// ============================================
+// ゲーム制御
+// ============================================
+function startGame() {
+    // 状態リセット
+    score = 0;
+    level = 1;
+    linesCleared = 0;
+    totalLinesCleared = 0;
+    gameBoard = createEmptyBoard();
+    particles = [];
+    
+    // UI更新
+    updateUI();
+    showScreen('game-screen');
+    
+    // 最初のブロック
+    currentBlock = createNewBlock();
+    nextBlock = createNewBlock();
+    updateQuoteDisplay(currentBlock.quote);
+    
+    // ゲーム開始
+    gameRunning = true;
+    gamePaused = false;
+    
+    // BGM開始
+    audioManager.startBGM(level);
+    
+    // メインループ開始
+    startGameLoop();
+    
+    // 描画
+    draw();
+    drawNextPiece();
+}
+
+function stopGame() {
+    gameRunning = false;
+    gamePaused = false;
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+    audioManager.stopBGM();
+}
+
+function pauseGame() {
+    if (!gameRunning) return;
+    gamePaused = true;
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+    audioManager.stopBGM();
+    document.getElementById('pause-screen').classList.remove('hidden');
+}
+
+function resumeGame() {
+    if (!gameRunning) return;
+    gamePaused = false;
+    hideScreen('pause-screen');
+    audioManager.startBGM(level);
+    startGameLoop();
+}
+
+function startGameLoop() {
+    if (gameInterval) {
+        clearInterval(gameInterval);
+    }
+    gameInterval = setInterval(gameLoop, getDropSpeed());
+}
+
+function gameLoop() {
+    if (!gameRunning || gamePaused) return;
+    
+    if (!moveBlock(0, 1)) {
+        // ブロック着地
+        audioManager.playLand();
+        placeBlock();
+        
+        const clearedLines = checkLines();
+        if (clearedLines > 0) {
+            handleLineClear(clearedLines);
+        }
+        
+        // 次のブロック
+        currentBlock = nextBlock;
+        nextBlock = createNewBlock();
+        updateQuoteDisplay(currentBlock.quote);
+        drawNextPiece();
+        
+        // ゲームオーバー判定
+        if (!isValidPosition(currentBlock, currentBlock.x, currentBlock.y)) {
+            gameOver();
+            return;
+        }
+    }
+    
+    draw();
+}
+
+// ============================================
+// ブロック操作
+// ============================================
+function createEmptyBoard() {
+    const board = [];
+    for (let y = 0; y < ROWS; y++) {
+        board[y] = [];
+        for (let x = 0; x < COLS; x++) {
+            board[y][x] = null;
+        }
+    }
+    return board;
+}
+
+function createNewBlock() {
+    const blockDef = getRandomBlock();
+    const block = {
+        ...blockDef,
+        x: Math.floor((COLS - blockDef.shape[0].length) / 2),
+        y: 0
+    };
+    return block;
+}
+
+function moveBlock(dx, dy) {
+    if (!currentBlock || !gameRunning || gamePaused) return false;
+    
+    const newX = currentBlock.x + dx;
+    const newY = currentBlock.y + dy;
+    
+    if (isValidPosition(currentBlock, newX, newY)) {
+        currentBlock.x = newX;
+        currentBlock.y = newY;
+        if (dx !== 0) audioManager.playMove();
+        draw();
+        return true;
+    }
+    return false;
+}
+
+function rotateBlock() {
+    if (!currentBlock || !gameRunning || gamePaused) return;
+    
+    // O型ブロックは回転しない
+    if (currentBlock.id.startsWith('O')) return;
+    
+    const rotated = rotateBlockShape(currentBlock.shape, currentBlock.chars);
+    const oldShape = currentBlock.shape;
+    const oldChars = currentBlock.chars;
+    
+    currentBlock.shape = rotated.shape;
+    currentBlock.chars = rotated.chars;
+    
+    // 壁蹴り判定
+    let kicked = false;
+    const kicks = [0, -1, 1, -2, 2];
+    
+    for (const kick of kicks) {
+        if (isValidPosition(currentBlock, currentBlock.x + kick, currentBlock.y)) {
+            currentBlock.x += kick;
+            kicked = true;
+            break;
+        }
+    }
+    
+    if (!kicked) {
+        // 回転できない場合は元に戻す
+        currentBlock.shape = oldShape;
+        currentBlock.chars = oldChars;
+        return;
+    }
+    
+    audioManager.playRotate();
+    draw();
+}
+
+function hardDrop() {
+    if (!currentBlock || !gameRunning || gamePaused) return;
+    
+    let dropDistance = 0;
+    while (isValidPosition(currentBlock, currentBlock.x, currentBlock.y + 1)) {
+        currentBlock.y++;
+        dropDistance++;
+    }
+    
+    if (dropDistance > 0) {
+        score += dropDistance * 2;
+        updateUI();
+        audioManager.playHardDrop();
+    }
+    
+    // 即座に設置
+    placeBlock();
+    
+    const clearedLines = checkLines();
+    if (clearedLines > 0) {
+        handleLineClear(clearedLines);
+    }
+    
+    // 次のブロック
+    currentBlock = nextBlock;
+    nextBlock = createNewBlock();
+    updateQuoteDisplay(currentBlock.quote);
+    drawNextPiece();
+    
+    // ゲームオーバー判定
+    if (!isValidPosition(currentBlock, currentBlock.x, currentBlock.y)) {
+        gameOver();
+        return;
+    }
+    
+    draw();
+    
+    // 落下タイマーリセット
+    startGameLoop();
+}
+
+function isValidPosition(block, x, y) {
+    for (let row = 0; row < block.shape.length; row++) {
+        for (let col = 0; col < block.shape[row].length; col++) {
+            if (block.shape[row][col]) {
+                const newX = x + col;
+                const newY = y + row;
+                
+                // 境界チェック
+                if (newX < 0 || newX >= COLS || newY >= ROWS) {
+                    return false;
+                }
+                
+                // 他のブロックとの衝突チェック
+                if (newY >= 0 && gameBoard[newY][newX]) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+function placeBlock() {
+    for (let row = 0; row < currentBlock.shape.length; row++) {
+        for (let col = 0; col < currentBlock.shape[row].length; col++) {
+            if (currentBlock.shape[row][col]) {
+                const boardY = currentBlock.y + row;
+                const boardX = currentBlock.x + col;
+                
+                if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
+                    gameBoard[boardY][boardX] = {
+                        color: currentBlock.color,
+                        gradient: currentBlock.gradient,
+                        shadowColor: currentBlock.shadowColor,
+                        char: currentBlock.chars[row][col] || ''
+                    };
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// ライン消し処理
+// ============================================
+function checkLines() {
+    const linesToClear = [];
+    
+    for (let y = ROWS - 1; y >= 0; y--) {
+        let complete = true;
+        for (let x = 0; x < COLS; x++) {
+            if (!gameBoard[y][x]) {
+                complete = false;
+                break;
+            }
+        }
+        if (complete) {
+            linesToClear.push(y);
+        }
+    }
+    
+    if (linesToClear.length > 0) {
+        // パーティクルエフェクト生成
+        linesToClear.forEach(y => {
+            createLineParticles(y);
+        });
+        
+        // ラインを削除
+        linesToClear.forEach(y => {
+            gameBoard.splice(y, 1);
+            gameBoard.unshift(new Array(COLS).fill(null));
+        });
+    }
+    
+    return linesToClear.length;
+}
+
+function handleLineClear(lines) {
+    // スコア計算
+    const lineScores = [0, 100, 300, 500, 800];
+    score += lineScores[Math.min(lines, 4)] * level;
+    
+    linesCleared += lines;
+    totalLinesCleared += lines;
+    
+    // 効果音
+    audioManager.playLineClear(lines);
+    
+    // 名言更新
+    updateQuoteDisplay(getRandomLineClearQuote());
+    
+    // レベルアップチェック
+    if (linesCleared >= LINES_PER_LEVEL) {
+        linesCleared -= LINES_PER_LEVEL;
+        level++;
+        
+        if (level > MAX_LEVEL) {
+            // ゲームクリア
+            gameClear();
+            return;
+        }
+        
+        audioManager.playLevelUp();
+        audioManager.stopBGM();
+        setTimeout(() => {
+            if (gameRunning && !gamePaused) {
+                audioManager.startBGM(level);
+            }
+        }, 500);
+        
+        updateQuoteDisplay(getRandomLevelupQuote());
+        
+        // 落下速度更新
+        startGameLoop();
+    }
+    
+    updateUI();
+}
+
+// ============================================
+// ゲーム終了処理
+// ============================================
+function gameOver() {
+    stopGame();
+    
+    audioManager.playGameOver();
+    
+    document.getElementById('final-level').textContent = level;
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('final-lines').textContent = totalLinesCleared;
+    document.getElementById('final-quote').textContent = getRandomGameoverQuote();
+    
+    document.getElementById('gameover-screen').classList.remove('hidden');
+}
+
+function gameClear() {
+    stopGame();
+    
+    audioManager.playGameClear();
+    
+    // クリアパーティクル
+    createClearParticles();
+    
+    document.getElementById('clear-score').textContent = score;
+    document.getElementById('clear-lines').textContent = totalLinesCleared;
+    
+    document.getElementById('clear-screen').classList.remove('hidden');
+}
+
+// ============================================
+// UI更新
+// ============================================
+function updateUI() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('level').textContent = level;
+    document.getElementById('lines').textContent = `${linesCleared}/${LINES_PER_LEVEL}`;
+}
+
+function updateQuoteDisplay(quote) {
+    const quoteEl = document.getElementById('current-quote');
+    quoteEl.textContent = quote;
+    quoteEl.style.animation = 'none';
+    // 再アニメーション
+    setTimeout(() => {
+        quoteEl.style.animation = '';
+    }, 10);
+}
+
+// ============================================
+// 描画
+// ============================================
+function draw() {
+    // キャンバスクリア
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // グリッド線
+    ctx.strokeStyle = 'rgba(100, 100, 150, 0.2)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= COLS; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * BLOCK_SIZE, 0);
+        ctx.lineTo(x * BLOCK_SIZE, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= ROWS; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * BLOCK_SIZE);
+        ctx.lineTo(canvas.width, y * BLOCK_SIZE);
+        ctx.stroke();
+    }
+    
+    // ゴースト（落下位置プレビュー）
+    if (currentBlock) {
+        let ghostY = currentBlock.y;
+        while (isValidPosition(currentBlock, currentBlock.x, ghostY + 1)) {
+            ghostY++;
+        }
+        if (ghostY > currentBlock.y) {
+            drawBlock(currentBlock, currentBlock.x, ghostY, true);
+        }
+    }
+    
+    // 配置済みブロック
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            if (gameBoard[y][x]) {
+                drawCell(x, y, gameBoard[y][x]);
+            }
+        }
+    }
+    
+    // 現在のブロック
+    if (currentBlock) {
+        drawBlock(currentBlock, currentBlock.x, currentBlock.y);
+    }
+    
+    // パーティクル更新・描画
+    updateParticles();
+}
+
+function drawBlock(block, posX, posY, isGhost = false) {
+    for (let row = 0; row < block.shape.length; row++) {
+        for (let col = 0; col < block.shape[row].length; col++) {
+            if (block.shape[row][col]) {
+                const x = posX + col;
+                const y = posY + row;
+                
+                if (y >= 0 && y < ROWS && x >= 0 && x < COLS) {
+                    if (isGhost) {
+                        drawGhostCell(x, y, block.color);
+                    } else {
+                        drawCell(x, y, {
+                            color: block.color,
+                            gradient: block.gradient,
+                            shadowColor: block.shadowColor,
+                            char: block.chars[row][col] || ''
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+function drawCell(x, y, cell) {
+    const px = x * BLOCK_SIZE;
+    const py = y * BLOCK_SIZE;
+    const size = BLOCK_SIZE - 2;
+    
+    // グラデーション
+    const gradient = ctx.createLinearGradient(px, py, px + size, py + size);
+    if (cell.gradient) {
+        gradient.addColorStop(0, cell.gradient[0]);
+        gradient.addColorStop(1, cell.gradient[1]);
+    } else {
+        gradient.addColorStop(0, cell.color);
+        gradient.addColorStop(1, cell.shadowColor || cell.color);
+    }
+    
+    // 外枠の影
+    ctx.fillStyle = cell.shadowColor || 'rgba(0,0,0,0.5)';
+    ctx.fillRect(px + 3, py + 3, size, size);
+    
+    // メインブロック
+    ctx.fillStyle = gradient;
+    ctx.fillRect(px + 1, py + 1, size, size);
+    
+    // ハイライト
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(px + 1, py + 1, size, 3);
+    ctx.fillRect(px + 1, py + 1, 3, size);
+    
+    // 文字
+    if (cell.char) {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${BLOCK_SIZE * 0.6}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 3;
+        ctx.fillText(cell.char, px + BLOCK_SIZE / 2, py + BLOCK_SIZE / 2 + 1);
+        ctx.shadowBlur = 0;
+    }
+}
+
+function drawGhostCell(x, y, color) {
+    const px = x * BLOCK_SIZE;
+    const py = y * BLOCK_SIZE;
+    const size = BLOCK_SIZE - 2;
+    
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(px + 2, py + 2, size - 2, size - 2);
+    ctx.setLineDash([]);
+}
+
+function drawNextPiece() {
+    // キャンバスクリア
+    nextCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+    
+    if (!nextBlock) return;
+    
+    const blockWidth = nextBlock.shape[0].length;
+    const blockHeight = nextBlock.shape.length;
+    const offsetX = (4 - blockWidth) / 2;
+    const offsetY = (4 - blockHeight) / 2;
+    
+    for (let row = 0; row < nextBlock.shape.length; row++) {
+        for (let col = 0; col < nextBlock.shape[row].length; col++) {
+            if (nextBlock.shape[row][col]) {
+                const px = (offsetX + col) * NEXT_BLOCK_SIZE;
+                const py = (offsetY + row) * NEXT_BLOCK_SIZE;
+                const size = NEXT_BLOCK_SIZE - 2;
+                
+                // グラデーション
+                const gradient = nextCtx.createLinearGradient(px, py, px + size, py + size);
+                if (nextBlock.gradient) {
+                    gradient.addColorStop(0, nextBlock.gradient[0]);
+                    gradient.addColorStop(1, nextBlock.gradient[1]);
+                } else {
+                    gradient.addColorStop(0, nextBlock.color);
+                    gradient.addColorStop(1, nextBlock.shadowColor || nextBlock.color);
+                }
+                
+                nextCtx.fillStyle = gradient;
+                nextCtx.fillRect(px + 1, py + 1, size, size);
+                
+                // 文字（小さめ）
+                const char = nextBlock.chars[row][col];
+                if (char) {
+                    nextCtx.fillStyle = '#fff';
+                    nextCtx.font = `bold ${NEXT_BLOCK_SIZE * 0.5}px sans-serif`;
+                    nextCtx.textAlign = 'center';
+                    nextCtx.textBaseline = 'middle';
+                    nextCtx.fillText(char, px + NEXT_BLOCK_SIZE / 2, py + NEXT_BLOCK_SIZE / 2);
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// パーティクルシステム
+// ============================================
+function createLineParticles(lineY) {
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe'];
+    
+    for (let x = 0; x < COLS; x++) {
+        const cell = gameBoard[lineY][x];
+        if (cell) {
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x: (canvas.offsetLeft + x * BLOCK_SIZE * parseFloat(canvas.style.width) / canvas.width) + Math.random() * BLOCK_SIZE,
+                    y: (canvas.offsetTop + lineY * BLOCK_SIZE * parseFloat(canvas.style.height) / canvas.height) + Math.random() * BLOCK_SIZE,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10 - 5,
+                    size: Math.random() * 8 + 4,
+                    color: cell.color || colors[Math.floor(Math.random() * colors.length)],
+                    life: 1,
+                    decay: 0.02 + Math.random() * 0.02
+                });
+            }
+        }
+    }
+}
+
+function createClearParticles() {
+    const colors = ['#feca57', '#ff6b6b', '#48dbfb', '#ff9ff3', '#1dd1a1'];
+    
+    for (let i = 0; i < 100; i++) {
+        particles.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            size: Math.random() * 15 + 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            life: 1,
+            decay: 0.005 + Math.random() * 0.01
+        });
+    }
+}
+
+function updateParticles() {
+    particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.3; // 重力
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+        }
+        
+        particleCtx.globalAlpha = p.life;
+        particleCtx.fillStyle = p.color;
+        particleCtx.beginPath();
+        particleCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        particleCtx.fill();
+    }
+    
+    particleCtx.globalAlpha = 1;
+    
+    // パーティクルがある場合は継続的に更新
+    if (particles.length > 0 && !gameRunning) {
+        requestAnimationFrame(updateParticles);
+    }
+}
+
+// ゲーム起動時のアニメーションループ
+function animationLoop() {
+    if (particles.length > 0) {
+        updateParticles();
+    }
+    requestAnimationFrame(animationLoop);
+}
+
+// アニメーションループ開始
+requestAnimationFrame(animationLoop);
