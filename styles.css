@@ -259,55 +259,15 @@ html, body {
 }
 
 /* ============================================
-   タッチコントロール
+   タッチヒント
    ============================================ */
 
-.touch-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 10px 0;
-}
-
-.control-row {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
-
-.control-btn {
-    width: 70px;
-    height: 70px;
-    border: none;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #3d4f7c, #2a3a5e);
-    color: white;
-    font-size: 1.8rem;
-    cursor: pointer;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3),
-                -3px -3px 10px rgba(255, 255, 255, 0.1);
-    transition: all 0.1s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.control-btn:active {
-    transform: scale(0.95);
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.rotate-btn {
-    background: linear-gradient(145deg, #667eea, #764ba2);
-}
-
-.down-btn {
-    width: 100px;
-}
-
-.drop-btn {
-    background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
-    width: 100px;
+.touch-hint {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 6px 0;
+    letter-spacing: 0.05em;
 }
 
 .game-footer {
@@ -449,16 +409,6 @@ html, body {
         font-size: 1.1rem;
     }
     
-    .control-btn {
-        width: 60px;
-        height: 60px;
-        font-size: 1.5rem;
-    }
-    
-    .down-btn, .drop-btn {
-        width: 85px;
-    }
-    
     .current-quote {
         padding: 8px 15px;
         font-size: 0.9rem;
@@ -467,34 +417,14 @@ html, body {
 }
 
 @media (max-height: 600px) {
-    .control-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.3rem;
-    }
-    
-    .down-btn, .drop-btn {
-        width: 70px;
-    }
-    
-    .touch-controls {
-        gap: 5px;
-    }
-    
-    .control-row {
-        gap: 10px;
+    .touch-hint {
+        display: none;
     }
 }
 
 @media (min-width: 768px) {
     .game-title {
         font-size: 4rem;
-    }
-    
-    .control-btn {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
     }
 }
 

@@ -30,16 +30,20 @@
         <h2>遊び方</h2>
         <div class="instructions">
             <div class="instruction-item">
+                <span class="icon">👈</span>
+                <p><strong>左タップ:</strong> 左に移動</p>
+            </div>
+            <div class="instruction-item">
+                <span class="icon">👉</span>
+                <p><strong>右タップ:</strong> 右に移動</p>
+            </div>
+            <div class="instruction-item">
                 <span class="icon">👆</span>
-                <p><strong>タップ:</strong> 左右に移動</p>
+                <p><strong>中央タップ / 上スワイプ:</strong> 回転</p>
             </div>
             <div class="instruction-item">
                 <span class="icon">👇</span>
-                <p><strong>下スワイプ:</strong> 高速落下</p>
-            </div>
-            <div class="instruction-item">
-                <span class="icon">🔄</span>
-                <p><strong>上スワイプ/タップ:</strong> 回転</p>
+                <p><strong>下スワイプ:</strong> 即落下</p>
             </div>
             <div class="instruction-item">
                 <span class="icon">🎯</span>
@@ -78,16 +82,8 @@
             「名言がここに表示されます」
         </div>
 
-        <div class="touch-controls">
-            <div class="control-row">
-                <button id="btn-left" class="control-btn">◀</button>
-                <button id="btn-rotate" class="control-btn rotate-btn">🔄</button>
-                <button id="btn-right" class="control-btn">▶</button>
-            </div>
-            <div class="control-row">
-                <button id="btn-down" class="control-btn down-btn">▼</button>
-                <button id="btn-drop" class="control-btn drop-btn">⏬</button>
-            </div>
+        <div class="touch-hint" id="touch-hint">
+            <span>👈 左 ／ 回転 ／ 右 👉</span>
         </div>
 
         <div class="game-footer">

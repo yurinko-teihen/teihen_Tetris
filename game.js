@@ -103,18 +103,6 @@ function initEventListeners() {
         showScreen('start-screen');
     });
     
-    // ゲーム中のコントロール
-    document.getElementById('btn-left').addEventListener('click', () => moveBlock(-1, 0));
-    document.getElementById('btn-right').addEventListener('click', () => moveBlock(1, 0));
-    document.getElementById('btn-down').addEventListener('click', () => moveBlock(0, 1));
-    document.getElementById('btn-rotate').addEventListener('click', () => rotateBlock());
-    document.getElementById('btn-drop').addEventListener('click', () => hardDrop());
-    
-    // タッチイベントを追加（連打対応）
-    addTouchHold('btn-left', () => moveBlock(-1, 0));
-    addTouchHold('btn-right', () => moveBlock(1, 0));
-    addTouchHold('btn-down', () => moveBlock(0, 1));
-    
     // ポーズ・サウンド
     document.getElementById('pause-btn').addEventListener('click', () => {
         audioManager.playUIClick();
@@ -174,69 +162,69 @@ function initEventListeners() {
     setupSwipeControls();
 }
 
-// タッチホールド（長押し連打）
-function addTouchHold(elementId, callback) {
-    const element = document.getElementById(elementId);
-    let intervalId = null;
-    
-    const startHold = () => {
-        callback();
-        intervalId = setInterval(callback, 100);
-    };
-    
-    const endHold = () => {
-        if (intervalId) {
-            clearInterval(intervalId);
-            intervalId = null;
-        }
-    };
-    
-    element.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        startHold();
-    });
-    
-    element.addEventListener('touchend', endHold);
-    element.addEventListener('touchcancel', endHold);
-}
-
-// スワイプコントロール
+// スワイプ＆タップコントロール（ゲーム画面全体）
 function setupSwipeControls() {
+    const gameScreen = document.getElementById('game-screen');
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
-    
-    canvas.addEventListener('touchstart', (e) => {
+    // 長押し連続移動用
+    let holdInterval = null;
+    let holdDirection = 0;
+
+    const clearHold = () => {
+        if (holdInterval) {
+            clearInterval(holdInterval);
+            holdInterval = null;
+        }
+        holdDirection = 0;
+    };
+
+    gameScreen.addEventListener('touchstart', (e) => {
+        // ボタン類（pause/sound）への伝播は無視
+        if (e.target.closest('.game-footer') || e.target.closest('.game-header')) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
     }, { passive: true });
-    
-    canvas.addEventListener('touchend', (e) => {
+
+    gameScreen.addEventListener('touchend', (e) => {
         if (!gameRunning || gamePaused) return;
-        
+        if (e.target.closest('.game-footer') || e.target.closest('.game-header')) return;
+
+        clearHold();
+
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
         const touchDuration = Date.now() - touchStartTime;
-        
+
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        
-        const minSwipeDistance = 30;
-        
-        // タップ（短い接触）
-        if (touchDuration < 200 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
-            rotateBlock();
+        const minSwipeDistance = 40;
+
+        // 短いタップ → 位置で左移動 / 回転 / 右移動を判定
+        if (touchDuration < 250 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
+            const screenW = window.innerWidth;
+            const zone = screenW / 3;
+            if (touchEndX < zone) {
+                moveBlock(-1, 0);
+            } else if (touchEndX > zone * 2) {
+                moveBlock(1, 0);
+            } else {
+                rotateBlock();
+            }
             return;
         }
-        
+
         // スワイプ判定
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
             // 横スワイプ
-            if (deltaX > minSwipeDistance) {
-                moveBlock(1, 0);
-            } else if (deltaX < -minSwipeDistance) {
-                moveBlock(-1, 0);
+            if (Math.abs(deltaX) >= minSwipeDistance) {
+                if (deltaX > 0) {
+                    moveBlock(1, 0);
+                } else {
+                    moveBlock(-1, 0);
+                }
             }
         } else {
             // 縦スワイプ
