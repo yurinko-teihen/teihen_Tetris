@@ -1,0 +1,524 @@
+/* ============================================
+   底辺テトリス - スタイルシート
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    touch-action: manipulation;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   スタート画面
+   ============================================ */
+
+#start-screen {
+    background: radial-gradient(ellipse at center, #2a2a4e 0%, #1a1a2e 100%);
+}
+
+.title-container {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.game-title {
+    font-size: 3rem;
+    font-weight: bold;
+    background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient 3s ease infinite;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.subtitle {
+    font-size: 1.5rem;
+    color: #feca57;
+    margin-top: 10px;
+    opacity: 0.9;
+}
+
+.start-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.menu-btn {
+    padding: 15px 50px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    min-width: 200px;
+}
+
+.menu-btn:hover, .menu-btn:active {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+    50% { box-shadow: 0 0 0 15px rgba(102, 126, 234, 0); }
+}
+
+.credits {
+    margin-top: 40px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.credits p {
+    margin: 5px 0;
+}
+
+/* ============================================
+   遊び方画面
+   ============================================ */
+
+#how-to-screen h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    color: #feca57;
+}
+
+.instructions {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 30px;
+    max-width: 350px;
+}
+
+.instruction-item {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    padding: 10px;
+}
+
+.instruction-item .icon {
+    font-size: 2rem;
+    margin-right: 15px;
+    min-width: 40px;
+}
+
+.instruction-item p {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* ============================================
+   ゲーム画面
+   ============================================ */
+
+#game-screen {
+    justify-content: flex-start;
+    padding: 10px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0d1b2a 100%);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 10px;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 10px;
+    min-width: 80px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #feca57;
+}
+
+.game-area {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 10px 0;
+}
+
+#game-canvas {
+    border: 3px solid #667eea;
+    border-radius: 5px;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5),
+                inset 0 0 50px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.next-piece-container {
+    position: absolute;
+    right: -80px;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 10px;
+}
+
+.next-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+#next-canvas {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}
+
+.current-quote {
+    font-size: 1rem;
+    text-align: center;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin: 10px 0;
+    max-width: 350px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: quoteGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes quoteGlow {
+    0% { box-shadow: 0 0 5px rgba(254, 202, 87, 0.3); }
+    100% { box-shadow: 0 0 15px rgba(254, 202, 87, 0.6); }
+}
+
+/* ============================================
+   タッチコントロール
+   ============================================ */
+
+.touch-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.control-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.control-btn {
+    width: 70px;
+    height: 70px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #3d4f7c, #2a3a5e);
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3),
+                -3px -3px 10px rgba(255, 255, 255, 0.1);
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.rotate-btn {
+    background: linear-gradient(145deg, #667eea, #764ba2);
+}
+
+.down-btn {
+    width: 100px;
+}
+
+.drop-btn {
+    background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
+    width: 100px;
+}
+
+.game-footer {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.small-btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.small-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   オーバーレイ画面
+   ============================================ */
+
+.overlay {
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 100;
+}
+
+.overlay-content {
+    text-align: center;
+    padding: 30px;
+    background: linear-gradient(145deg, #2a2a4e, #1a1a2e);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    max-width: 350px;
+}
+
+.overlay-content h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #feca57;
+}
+
+.overlay-content .menu-btn {
+    margin: 10px 0;
+    width: 100%;
+}
+
+.gameover-title {
+    color: #ff6b6b !important;
+}
+
+.final-stats {
+    margin: 20px 0;
+    font-size: 1.2rem;
+}
+
+.final-stats p {
+    margin: 10px 0;
+}
+
+.final-quote {
+    font-size: 1rem;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* ============================================
+   クリア画面
+   ============================================ */
+
+.celebration {
+    animation: celebrate 0.5s ease-in-out;
+}
+
+@keyframes celebrate {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.clear-title {
+    font-size: 2.5rem !important;
+    color: #feca57 !important;
+    animation: rainbow 2s linear infinite;
+}
+
+@keyframes rainbow {
+    0% { color: #ff6b6b; }
+    25% { color: #feca57; }
+    50% { color: #48dbfb; }
+    75% { color: #ff9ff3; }
+    100% { color: #ff6b6b; }
+}
+
+.clear-message {
+    font-size: 1.3rem;
+    margin: 20px 0;
+}
+
+.clear-message p {
+    margin: 5px 0;
+}
+
+/* ============================================
+   パーティクルキャンバス
+   ============================================ */
+
+#particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* ============================================
+   レスポンシブ調整
+   ============================================ */
+
+@media (max-height: 700px) {
+    .game-header {
+        margin-bottom: 5px;
+    }
+    
+    .stat-box {
+        padding: 5px 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+    }
+    
+    .control-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .down-btn, .drop-btn {
+        width: 85px;
+    }
+    
+    .current-quote {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+        min-height: 40px;
+    }
+}
+
+@media (max-height: 600px) {
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.3rem;
+    }
+    
+    .down-btn, .drop-btn {
+        width: 70px;
+    }
+    
+    .touch-controls {
+        gap: 5px;
+    }
+    
+    .control-row {
+        gap: 10px;
+    }
+}
+
+@media (min-width: 768px) {
+    .game-title {
+        font-size: 4rem;
+    }
+    
+    .control-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+}
+
+/* ============================================
+   ブロックフラッシュエフェクト
+   ============================================ */
+
+.line-clear-flash {
+    animation: lineFlash 0.3s ease-out;
+}
+
+@keyframes lineFlash {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(3); }
+    100% { filter: brightness(1); }
+}
+
+/* ============================================
+   スクロール防止
+   ============================================ */
+
+body {
+    overscroll-behavior: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
