@@ -168,17 +168,6 @@ function setupSwipeControls() {
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
-    // 長押し連続移動用
-    let holdInterval = null;
-    let holdDirection = 0;
-
-    const clearHold = () => {
-        if (holdInterval) {
-            clearInterval(holdInterval);
-            holdInterval = null;
-        }
-        holdDirection = 0;
-    };
 
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類（pause/sound）への伝播は無視
@@ -191,8 +180,6 @@ function setupSwipeControls() {
     gameScreen.addEventListener('touchend', (e) => {
         if (!gameRunning || gamePaused) return;
         if (e.target.closest('.game-footer') || e.target.closest('.game-header')) return;
-
-        clearHold();
 
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
