@@ -115,7 +115,7 @@ function initEventListeners() {
         showScreen('start-screen');
     });
     
-    // ポーズはキーボード(Escape/p)からのみ
+    // ポーズ機能はキーボードショートカット（Escape または p キー）で利用可能
     
     // ポーズ画面
     document.getElementById('resume-btn').addEventListener('click', () => {
