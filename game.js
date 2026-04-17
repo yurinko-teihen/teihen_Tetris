@@ -8,7 +8,7 @@
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 28; // ピクセル
-const NEXT_BLOCK_SIZE = 20;
+const NEXT_BLOCK_SIZE = 12; // サイドパネルに収まるサイズ
 const ANIMATION_RESET_DELAY = 10; // CSSアニメーション再起動に必要な最小遅延（ミリ秒）
 
 // ゲーム状態
@@ -68,9 +68,22 @@ function resizeCanvas() {
     particleCanvas.width = window.innerWidth;
     particleCanvas.height = window.innerHeight;
     
-    // ゲームキャンバスのサイズ調整（スマホ画面を最大限活用）
-    const maxHeight = window.innerHeight * 0.62;
-    const maxWidth = window.innerWidth * 0.75;
+    // ゲーム画面が非表示の場合はキャンバスサイズ調整をスキップ
+    const gameScreen = document.getElementById('game-screen');
+    if (!gameScreen || gameScreen.classList.contains('hidden')) return;
+    
+    const layout = document.querySelector('.game-layout');
+    const leftPanel = document.querySelector('.left-panel');
+    const rightPanel = document.querySelector('.right-panel');
+    if (!layout || !leftPanel || !rightPanel) return;
+    
+    // サイドパネルの幅とギャップから使用可能な幅を算出
+    const layoutWidth = layout.clientWidth;
+    const leftWidth = leftPanel.getBoundingClientRect().width;
+    const rightWidth = rightPanel.getBoundingClientRect().width;
+    const layoutGap = 4; // CSSのgapに対応
+    const maxWidth = layoutWidth - leftWidth - rightWidth - (layoutGap * 2);
+    const maxHeight = layout.clientHeight;
     
     const scaleH = maxHeight / (ROWS * BLOCK_SIZE);
     const scaleW = maxWidth / (COLS * BLOCK_SIZE);
@@ -111,7 +124,7 @@ function initEventListeners() {
     
     document.getElementById('sound-btn').addEventListener('click', () => {
         const isMuted = audioManager.toggleMute();
-        document.getElementById('sound-btn').textContent = isMuted ? '🔇 音' : '🔊 音';
+        document.getElementById('sound-btn').textContent = isMuted ? '🔇' : '🔊';
     });
     
     // ポーズ画面
@@ -170,8 +183,8 @@ function setupSwipeControls() {
     let touchStartTime = 0;
 
     gameScreen.addEventListener('touchstart', (e) => {
-        // ボタン類（pause/sound）への伝播は無視
-        if (e.target.closest('.game-footer') || e.target.closest('.game-header')) return;
+        // ボタン類への伝播は無視
+        if (e.target.closest('.game-top-bar')) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
@@ -179,7 +192,7 @@ function setupSwipeControls() {
 
     gameScreen.addEventListener('touchend', (e) => {
         if (!gameRunning || gamePaused) return;
-        if (e.target.closest('.game-footer') || e.target.closest('.game-header')) return;
+        if (e.target.closest('.game-top-bar')) return;
 
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -297,6 +310,7 @@ function startGame() {
     // UI更新
     updateUI();
     showScreen('game-screen');
+    resizeCanvas();
     
     // 最初のブロック
     currentBlock = createNewBlock();
