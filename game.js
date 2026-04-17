@@ -8,8 +8,7 @@
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 28; // ピクセル
-const NEXT_BLOCK_SIZE = 12; // サイドパネルに収まるサイズ
-const ANIMATION_RESET_DELAY = 10; // CSSアニメーション再起動に必要な最小遅延（ミリ秒）
+const NEXT_BLOCK_SIZE = 8; // サイドパネルに収まるサイズ（小さめ）
 
 // ゲーム状態
 let canvas, ctx, nextCanvas, nextCtx, particleCanvas, particleCtx;
@@ -116,16 +115,7 @@ function initEventListeners() {
         showScreen('start-screen');
     });
     
-    // ポーズ・サウンド
-    document.getElementById('pause-btn').addEventListener('click', () => {
-        audioManager.playUIClick();
-        pauseGame();
-    });
-    
-    document.getElementById('sound-btn').addEventListener('click', () => {
-        const isMuted = audioManager.toggleMute();
-        document.getElementById('sound-btn').textContent = isMuted ? '🔇' : '🔊';
-    });
+    // ポーズ機能はキーボードショートカット（Escape または p キー）で利用可能
     
     // ポーズ画面
     document.getElementById('resume-btn').addEventListener('click', () => {
@@ -315,8 +305,6 @@ function startGame() {
     // 最初のブロック
     currentBlock = createNewBlock();
     nextBlock = createNewBlock();
-    updateQuoteDisplay(currentBlock.quote);
-    
     // ゲーム開始
     gameRunning = true;
     gamePaused = false;
@@ -384,7 +372,6 @@ function gameLoop() {
         // 次のブロック
         currentBlock = nextBlock;
         nextBlock = createNewBlock();
-        updateQuoteDisplay(currentBlock.quote);
         drawNextPiece();
         
         // ゲームオーバー判定
@@ -499,7 +486,6 @@ function hardDrop() {
     // 次のブロック
     currentBlock = nextBlock;
     nextBlock = createNewBlock();
-    updateQuoteDisplay(currentBlock.quote);
     drawNextPiece();
     
     // ゲームオーバー判定
@@ -602,9 +588,6 @@ function handleLineClear(lines) {
     // 効果音
     audioManager.playLineClear(lines);
     
-    // 名言更新
-    updateQuoteDisplay(getRandomLineClearQuote());
-    
     // レベルアップチェック
     if (linesCleared >= LINES_PER_LEVEL) {
         linesCleared -= LINES_PER_LEVEL;
@@ -623,8 +606,6 @@ function handleLineClear(lines) {
                 audioManager.startBGM(level);
             }
         }, 500);
-        
-        updateQuoteDisplay(getRandomLevelupQuote());
         
         // 落下速度更新
         startGameLoop();
@@ -672,15 +653,6 @@ function updateUI() {
     document.getElementById('lines').textContent = `${linesCleared}/${LINES_PER_LEVEL}`;
 }
 
-function updateQuoteDisplay(quote) {
-    const quoteEl = document.getElementById('current-quote');
-    quoteEl.textContent = quote;
-    quoteEl.style.animation = 'none';
-    // CSSアニメーションを再起動するには、一度無効化してブラウザに再描画させる必要がある
-    setTimeout(() => {
-        quoteEl.style.animation = '';
-    }, ANIMATION_RESET_DELAY);
-}
 
 // ============================================
 // 描画
