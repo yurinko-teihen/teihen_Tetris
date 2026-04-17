@@ -8,7 +8,7 @@
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 28; // ピクセル
-const NEXT_BLOCK_SIZE = 10;
+const NEXT_BLOCK_SIZE = 12; // サイドパネルに収まるサイズ
 const ANIMATION_RESET_DELAY = 10; // CSSアニメーション再起動に必要な最小遅延（ミリ秒）
 
 // ゲーム状態
@@ -73,14 +73,16 @@ function resizeCanvas() {
     if (!gameScreen || gameScreen.classList.contains('hidden')) return;
     
     const layout = document.querySelector('.game-layout');
-    const wrapper = document.querySelector('.game-board-wrapper');
-    if (!layout || !wrapper) return;
+    const leftPanel = document.querySelector('.left-panel');
+    const rightPanel = document.querySelector('.right-panel');
+    if (!layout || !leftPanel || !rightPanel) return;
     
-    // 一旦キャンバスを最小にしてラッパーの使用可能な幅を測定
-    canvas.style.width = '0px';
-    canvas.style.height = '0px';
-    
-    const maxWidth = wrapper.clientWidth;
+    // サイドパネルの幅とギャップから使用可能な幅を算出
+    const layoutWidth = layout.clientWidth;
+    const leftWidth = leftPanel.getBoundingClientRect().width;
+    const rightWidth = rightPanel.getBoundingClientRect().width;
+    const layoutGap = 4; // CSSのgapに対応
+    const maxWidth = layoutWidth - leftWidth - rightWidth - (layoutGap * 2);
     const maxHeight = layout.clientHeight;
     
     const scaleH = maxHeight / (ROWS * BLOCK_SIZE);

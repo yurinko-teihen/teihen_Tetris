@@ -211,6 +211,7 @@ html, body {
     flex-direction: column;
     gap: 8px;
     padding-top: 4px;
+    /* NEXT プレビュー(40px) + パディングに収まるサイズ */
     min-width: 44px;
     max-width: 54px;
     flex-shrink: 0;
