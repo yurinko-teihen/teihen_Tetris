@@ -59,8 +59,8 @@ function initCanvas() {
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
     
-    nextCanvas.width = 4 * NEXT_BLOCK_SIZE;
-    nextCanvas.height = 4 * NEXT_BLOCK_SIZE;
+    nextCanvas.width = 6 * NEXT_BLOCK_SIZE;
+    nextCanvas.height = 6 * NEXT_BLOCK_SIZE;
 }
 
 function resizeCanvas() {
@@ -821,8 +821,8 @@ function drawNextPiece() {
     
     const blockWidth = nextBlock.shape[0].length;
     const blockHeight = nextBlock.shape.length;
-    const offsetX = (4 - blockWidth) / 2;
-    const offsetY = (4 - blockHeight) / 2;
+    const offsetX = (6 - blockWidth) / 2;
+    const offsetY = (6 - blockHeight) / 2;
     
     for (let row = 0; row < nextBlock.shape.length; row++) {
         for (let col = 0; col < nextBlock.shape[row].length; col++) {
