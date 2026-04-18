@@ -403,7 +403,7 @@ function createNewBlock() {
     const block = {
         ...blockDef,
         x: Math.floor((COLS - blockDef.shape[0].length) / 2),
-        y: 0
+        y: -blockDef.shape.length + 1
     };
     return block;
 }
@@ -567,11 +567,13 @@ function checkLines() {
             createLineParticles(y);
         });
         
-        // ラインを削除
-        linesToClear.forEach(y => {
-            gameBoard.splice(y, 1);
-            gameBoard.unshift(new Array(COLS).fill(null));
-        });
+        // ラインを削除（完成した行をフィルタで除外し、上に空行を追加）
+        const clearedSet = new Set(linesToClear);
+        const newBoard = gameBoard.filter((row, idx) => !clearedSet.has(idx));
+        while (newBoard.length < ROWS) {
+            newBoard.unshift(new Array(COLS).fill(null));
+        }
+        gameBoard = newBoard;
     }
     
     return linesToClear.length;
