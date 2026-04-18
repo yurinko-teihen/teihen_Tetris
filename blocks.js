@@ -221,11 +221,11 @@ const BLOCK_DEFINITIONS = [
             [1, 1]
         ],
         chars: [
-            ['', '勝'],
-            ['', 'つ'],
-            ['ぞ', '！']
+            ['', 'ゴ'],
+            ['', 'ル'],
+            ['ウ', 'ィ']
         ],
-        quote: '「勝つぞ！」',
+        quote: '「ゴルウィ」',
         color: '#74b9ff',
         shadowColor: '#0984e3',
         gradient: ['#74b9ff', '#0984e3']
@@ -292,10 +292,10 @@ const BLOCK_DEFINITIONS = [
             [0, 1, 1]
         ],
         chars: [
-            ['や', 'る', ''],
-            ['', 'ぞ', '！']
+            ['構', '成', ''],
+            ['', '員', '！']
         ],
-        quote: '「やるぞ！」',
+        quote: '「構成員」',
         color: '#e17055',
         shadowColor: '#d63031',
         gradient: ['#e17055', '#d63031']
