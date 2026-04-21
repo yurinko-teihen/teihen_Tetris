@@ -14,7 +14,7 @@ html, body {
     height: 100%;
     overflow: hidden;
     font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
-    background: url('IMG_20260421_224455.jpg') center center / cover no-repeat fixed;
+    background: url('resources/images/IMG_20260421_224455.jpg') center center / cover no-repeat fixed;
     color: #fff;
     touch-action: manipulation;
 }
