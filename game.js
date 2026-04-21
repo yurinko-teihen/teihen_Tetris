@@ -35,6 +35,10 @@ function getDropSpeed() {
 // パーティクルシステム
 let particles = [];
 
+// マロ画像
+const maroImage = new Image();
+maroImage.src = 'resources/images/maro.png';
+
 // ============================================
 // 初期化
 // ============================================
@@ -362,7 +366,11 @@ function gameLoop() {
     if (!moveBlock(0, 1)) {
         // ブロック着地
         audioManager.playLand();
-        placeBlock();
+        if (currentBlock.isMaro) {
+            maroExplosion();
+        } else {
+            placeBlock();
+        }
         
         const clearedLines = checkLines();
         if (clearedLines > 0) {
@@ -476,7 +484,11 @@ function hardDrop() {
     }
     
     // 即座に設置
-    placeBlock();
+    if (currentBlock.isMaro) {
+        maroExplosion();
+    } else {
+        placeBlock();
+    }
     
     const clearedLines = checkLines();
     if (clearedLines > 0) {
@@ -539,6 +551,48 @@ function placeBlock() {
                 }
             }
         }
+    }
+}
+
+// ============================================
+// マロ爆発処理（自分含む周囲8ブロックを破壊）
+// ============================================
+function maroExplosion() {
+    const cx = currentBlock.x;
+    const cy = currentBlock.y;
+    const canvasRect = canvas.getBoundingClientRect();
+
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                if (gameBoard[ny][nx]) {
+                    createExplosionParticles(nx, ny, gameBoard[ny][nx].color, canvasRect);
+                }
+                gameBoard[ny][nx] = null;
+            }
+        }
+    }
+}
+
+function createExplosionParticles(bx, by, color, canvasRect) {
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe'];
+    const particleColor = color || colors[Math.floor(Math.random() * colors.length)];
+
+    for (let i = 0; i < 6; i++) {
+        particles.push({
+            x: canvasRect.left + (bx * BLOCK_SIZE * scaleX) + Math.random() * (BLOCK_SIZE * scaleX),
+            y: canvasRect.top + (by * BLOCK_SIZE * scaleY) + Math.random() * (BLOCK_SIZE * scaleY),
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.5) * 14 - 6,
+            size: Math.random() * 10 + 5,
+            color: particleColor,
+            life: 1,
+            decay: 0.025 + Math.random() * 0.025
+        });
     }
 }
 
@@ -724,7 +778,8 @@ function drawBlock(block, posX, posY, isGhost = false) {
                             color: block.color,
                             gradient: block.gradient,
                             shadowColor: block.shadowColor,
-                            char: block.chars[row][col] || ''
+                            char: block.chars[row][col] || '',
+                            isMaro: block.isMaro || false
                         });
                     }
                 }
@@ -737,6 +792,17 @@ function drawCell(x, y, cell) {
     const px = x * BLOCK_SIZE;
     const py = y * BLOCK_SIZE;
     const size = BLOCK_SIZE - 2;
+
+    // マロブロックは画像で描画
+    if (cell.isMaro) {
+        if (maroImage.complete && maroImage.naturalWidth > 0) {
+            ctx.drawImage(maroImage, px + 1, py + 1, size, size);
+        } else {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(px + 1, py + 1, size, size);
+        }
+        return;
+    }
     
     // グラデーション
     const gradient = ctx.createLinearGradient(px, py, px + size, py + size);
