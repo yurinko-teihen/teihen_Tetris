@@ -169,17 +169,17 @@ function initEventListeners() {
     setupSwipeControls();
 }
 
-// タッチ位置に応じてブロックを横移動
-function moveTouchPosition(touchX) {
+// タッチ開始位置からのスライド量に応じてブロックを横移動
+function moveTouchPosition(touchStartX, touchCurrentX, blockStartX) {
     if (!currentBlock || !gameRunning || gamePaused) return;
 
     const canvasRect = canvas.getBoundingClientRect();
     const blockWidth = currentBlock.shape[0].length;
 
-    // タッチX座標をキャンバスのカラム番号に変換
-    const col = Math.floor((touchX - canvasRect.left) / canvasRect.width * COLS);
-    // ブロックの中心をタッチ位置に合わせる
-    const targetX = Math.max(0, Math.min(COLS - blockWidth, col - Math.floor(blockWidth / 2)));
+    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換
+    const cellWidth = canvasRect.width / COLS;
+    const deltaCols = Math.round((touchCurrentX - touchStartX) / cellWidth);
+    const targetX = Math.max(0, Math.min(COLS - blockWidth, blockStartX + deltaCols));
 
     if (targetX === currentBlock.x) return;
 
@@ -203,6 +203,7 @@ function setupSwipeControls() {
     let touchStartTime = 0;
     let touchMoved = false;
     let isDownSwipe = false;
+    let blockStartX = 0;
 
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類への伝播は無視
@@ -212,6 +213,7 @@ function setupSwipeControls() {
         touchStartTime = Date.now();
         touchMoved = false;
         isDownSwipe = false;
+        blockStartX = currentBlock ? currentBlock.x : 0;
     }, { passive: true });
 
     gameScreen.addEventListener('touchmove', (e) => {
@@ -230,7 +232,7 @@ function setupSwipeControls() {
         if (isDownSwipe) return;
 
         touchMoved = true;
-        moveTouchPosition(touchX);
+        moveTouchPosition(touchStartX, touchX, blockStartX);
     }, { passive: true });
 
     gameScreen.addEventListener('touchend', (e) => {
