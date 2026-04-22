@@ -169,12 +169,39 @@ function initEventListeners() {
     setupSwipeControls();
 }
 
+// タッチ位置に応じてブロックを横移動
+function moveTouchPosition(touchX) {
+    if (!currentBlock || !gameRunning || gamePaused) return;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    const blockWidth = currentBlock.shape[0].length;
+
+    // タッチX座標をキャンバスのカラム番号に変換
+    const col = Math.floor((touchX - canvasRect.left) / canvasRect.width * COLS);
+    // ブロックの中心をタッチ位置に合わせる
+    const targetX = Math.max(0, Math.min(COLS - blockWidth, col - Math.floor(blockWidth / 2)));
+
+    if (targetX === currentBlock.x) return;
+
+    // 直接移動を試みる
+    if (isValidPosition(currentBlock, targetX, currentBlock.y)) {
+        currentBlock.x = targetX;
+        audioManager.playMove();
+        draw();
+    } else {
+        // 直接移動できない場合は1歩ずつ近づく
+        const direction = targetX > currentBlock.x ? 1 : -1;
+        moveBlock(direction, 0);
+    }
+}
+
 // スワイプ＆タップコントロール（ゲーム画面全体）
 function setupSwipeControls() {
     const gameScreen = document.getElementById('game-screen');
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
+    let touchMoved = false;
 
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類への伝播は無視
@@ -182,6 +209,23 @@ function setupSwipeControls() {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
+        touchMoved = false;
+    }, { passive: true });
+
+    gameScreen.addEventListener('touchmove', (e) => {
+        if (!gameRunning || gamePaused) return;
+        if (e.target.closest('.game-top-bar')) return;
+
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaY = touchY - touchStartY;
+        const deltaX = touchX - touchStartX;
+
+        // 下スワイプ中は横移動しない
+        if (deltaY > 20 && Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+        touchMoved = true;
+        moveTouchPosition(touchX);
     }, { passive: true });
 
     gameScreen.addEventListener('touchend', (e) => {
@@ -196,37 +240,15 @@ function setupSwipeControls() {
         const deltaY = touchEndY - touchStartY;
         const minSwipeDistance = 40;
 
-        // 短いタップ → 位置で左移動 / 回転 / 右移動を判定
-        if (touchDuration < 250 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
-            const screenW = window.innerWidth;
-            const zone = screenW / 3;
-            if (touchEndX < zone) {
-                moveBlock(-1, 0);
-            } else if (touchEndX > zone * 2) {
-                moveBlock(1, 0);
-            } else {
-                rotateBlock();
-            }
+        // 短いタップ（移動なし）→ 回転
+        if (!touchMoved && touchDuration < 300 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
+            rotateBlock();
             return;
         }
 
-        // スワイプ判定
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // 横スワイプ
-            if (Math.abs(deltaX) >= minSwipeDistance) {
-                if (deltaX > 0) {
-                    moveBlock(1, 0);
-                } else {
-                    moveBlock(-1, 0);
-                }
-            }
-        } else {
-            // 縦スワイプ
-            if (deltaY > minSwipeDistance) {
-                hardDrop();
-            } else if (deltaY < -minSwipeDistance) {
-                rotateBlock();
-            }
+        // 下スワイプ → 即落下
+        if (deltaY > minSwipeDistance && deltaY > Math.abs(deltaX)) {
+            hardDrop();
         }
     }, { passive: true });
 }
