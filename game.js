@@ -202,6 +202,7 @@ function setupSwipeControls() {
     let touchStartY = 0;
     let touchStartTime = 0;
     let touchMoved = false;
+    let isDownSwipe = false;
 
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類への伝播は無視
@@ -210,6 +211,7 @@ function setupSwipeControls() {
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
         touchMoved = false;
+        isDownSwipe = false;
     }, { passive: true });
 
     gameScreen.addEventListener('touchmove', (e) => {
@@ -221,8 +223,11 @@ function setupSwipeControls() {
         const deltaY = touchY - touchStartY;
         const deltaX = touchX - touchStartX;
 
-        // 下スワイプ中は横移動しない
-        if (deltaY > 20 && Math.abs(deltaY) > Math.abs(deltaX)) return;
+        // 下スワイプを検知したらフラグを立てて以降の横移動を禁止
+        if (deltaY > 20 && Math.abs(deltaY) > Math.abs(deltaX)) {
+            isDownSwipe = true;
+        }
+        if (isDownSwipe) return;
 
         touchMoved = true;
         moveTouchPosition(touchX);
