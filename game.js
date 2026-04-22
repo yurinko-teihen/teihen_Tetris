@@ -176,9 +176,10 @@ function moveTouchPosition(touchStartX, touchCurrentX, blockStartX) {
     const canvasRect = canvas.getBoundingClientRect();
     const blockWidth = currentBlock.shape[0].length;
 
-    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換
+    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換（70%以上ずれたら1マス移動）
     const cellWidth = canvasRect.width / COLS;
-    const deltaCols = Math.round((touchCurrentX - touchStartX) / cellWidth);
+    const rawDelta = touchCurrentX - touchStartX;
+    const deltaCols = Math.sign(rawDelta) * Math.floor(Math.abs(rawDelta) / cellWidth + 0.3);
     const targetX = Math.max(0, Math.min(COLS - blockWidth, blockStartX + deltaCols));
 
     if (targetX === currentBlock.x) return;
