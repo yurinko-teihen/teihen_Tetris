@@ -176,10 +176,10 @@ function moveTouchPosition(touchStartX, touchCurrentX, blockStartX) {
     const canvasRect = canvas.getBoundingClientRect();
     const blockWidth = currentBlock.shape[0].length;
 
-    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換（70%以上ずれたら1マス移動）
+    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換（90%以上ずれたら1マス移動）
     const cellWidth = canvasRect.width / COLS;
     const rawDelta = touchCurrentX - touchStartX;
-    const deltaCols = Math.sign(rawDelta) * Math.floor(Math.abs(rawDelta) / cellWidth + 0.3);
+    const deltaCols = Math.sign(rawDelta) * Math.floor(Math.abs(rawDelta) / cellWidth + 0.1);
     const targetX = Math.max(0, Math.min(COLS - blockWidth, blockStartX + deltaCols));
 
     if (targetX === currentBlock.x) return;
@@ -246,7 +246,7 @@ function setupSwipeControls() {
 
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        const minSwipeDistance = 40;
+        const minSwipeDistance = 60;
 
         // 短いタップ（移動なし）→ 回転
         if (!touchMoved && touchDuration < 300 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
@@ -255,7 +255,7 @@ function setupSwipeControls() {
         }
 
         // 下スワイプ → 即落下
-        if (deltaY > minSwipeDistance && deltaY > Math.abs(deltaX)) {
+        if (deltaY > minSwipeDistance && deltaY > 1.5 * Math.abs(deltaX)) {
             hardDrop();
         }
     }, { passive: true });
