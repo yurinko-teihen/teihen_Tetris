@@ -721,13 +721,89 @@ function gameClear() {
     
     audioManager.playGameClear();
     
-    // クリアパーティクル
+    // 画面フラッシュ演出
+    flashScreen();
+    
+    // 花火パーティクルを複数波で発射
     createClearParticles();
+    setTimeout(() => createFireworksParticles(window.innerWidth * 0.25, window.innerHeight * 0.4), 400);
+    setTimeout(() => createFireworksParticles(window.innerWidth * 0.75, window.innerHeight * 0.35), 700);
+    setTimeout(() => createFireworksParticles(window.innerWidth * 0.5, window.innerHeight * 0.25), 1000);
+    setTimeout(() => createClearParticles(), 1300);
+    setTimeout(() => createFireworksParticles(window.innerWidth * 0.15, window.innerHeight * 0.5), 1600);
+    setTimeout(() => createFireworksParticles(window.innerWidth * 0.85, window.innerHeight * 0.5), 1900);
+    setTimeout(() => createClearParticles(), 2500);
     
     document.getElementById('clear-score').textContent = score;
     document.getElementById('clear-lines').textContent = totalLinesCleared;
     
-    document.getElementById('clear-screen').classList.remove('hidden');
+    // ボタンを無効化してから画面を表示（誤操作防止）
+    const clearScreen = document.getElementById('clear-screen');
+    const buttons = clearScreen.querySelectorAll('.menu-btn');
+    buttons.forEach(btn => {
+        btn.classList.add('btn-disabled');
+        btn.classList.remove('btn-appear');
+    });
+    
+    // 少し遅らせてクリア画面を表示し、カウントダウン開始
+    setTimeout(() => {
+        clearScreen.classList.remove('hidden');
+        startClearCountdown(3, buttons);
+    }, 600);
+}
+
+// 画面フラッシュ演出
+function flashScreen() {
+    const existing = document.getElementById('screen-flash');
+    if (existing) existing.remove();
+    const flash = document.createElement('div');
+    flash.id = 'screen-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 800);
+}
+
+// 花火パーティクル（指定座標から放射状に爆発）
+function createFireworksParticles(centerX, centerY) {
+    const colors = ['#feca57', '#ff6b6b', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe', '#ffffff'];
+    const count = 45;
+    for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const speed = 4 + Math.random() * 10;
+        particles.push({
+            x: centerX,
+            y: centerY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 3,
+            size: Math.random() * 10 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            life: 1,
+            decay: 0.01 + Math.random() * 0.015
+        });
+    }
+}
+
+// クリアカウントダウン（指定秒後にボタンを有効化）
+function startClearCountdown(seconds, buttons) {
+    const countdownEl = document.getElementById('clear-countdown');
+    
+    const tick = (remaining) => {
+        if (remaining > 0) {
+            countdownEl.textContent = remaining;
+            countdownEl.classList.remove('countdown-tick');
+            void countdownEl.offsetWidth; // reflow でアニメーションをリセット
+            countdownEl.classList.add('countdown-tick');
+            audioManager.playTone(880 - (seconds - remaining) * 150, 0.15, 'sine', 0.2);
+            setTimeout(() => tick(remaining - 1), 1000);
+        } else {
+            countdownEl.textContent = '';
+            buttons.forEach((btn, i) => {
+                btn.classList.remove('btn-disabled');
+                setTimeout(() => btn.classList.add('btn-appear'), i * 80);
+            });
+            audioManager.playTone(1047, 0.3, 'sine', 0.25);
+        }
+    };
+    tick(seconds);
 }
 
 // ============================================
