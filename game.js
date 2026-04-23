@@ -35,6 +35,9 @@ function getDropSpeed() {
 // パーティクルシステム
 let particles = [];
 
+// ハードドロップエフェクト（速度ライン）
+let hardDropEffect = null;
+
 // マロ画像
 const maroImage = new Image();
 maroImage.src = 'resources/images/maro.png';
@@ -501,6 +504,14 @@ function rotateBlock() {
 function hardDrop() {
     if (!currentBlock || !gameRunning || gamePaused) return;
     
+    // エフェクト用に落下前の情報を保存
+    const effectInfo = {
+        shape: currentBlock.shape.map(row => row.slice()),
+        color: currentBlock.color,
+        x: currentBlock.x,
+        fromY: currentBlock.y
+    };
+
     let dropDistance = 0;
     while (isValidPosition(currentBlock, currentBlock.x, currentBlock.y + 1)) {
         currentBlock.y++;
@@ -511,6 +522,22 @@ function hardDrop() {
         score += dropDistance * 2;
         updateUI();
         audioManager.playHardDrop();
+
+        // 速度ライントレイルエフェクト
+        hardDropEffect = {
+            shape: effectInfo.shape,
+            color: effectInfo.color,
+            x: effectInfo.x,
+            fromY: effectInfo.fromY,
+            toY: currentBlock.y,
+            alpha: 0.9
+        };
+
+        // 着地インパクトパーティクル
+        createHardDropImpact(currentBlock);
+
+        // キャンバスシェイク
+        shakeCanvas();
     }
     
     // 即座に設置
@@ -867,6 +894,15 @@ function draw() {
         }
     }
     
+    // ハードドロップ速度ライントレイル
+    if (hardDropEffect) {
+        drawHardDropTrail(hardDropEffect);
+        hardDropEffect.alpha -= 0.12;
+        if (hardDropEffect.alpha <= 0) {
+            hardDropEffect = null;
+        }
+    }
+    
     // 配置済みブロック
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
@@ -1023,6 +1059,76 @@ function drawNextPiece() {
 // ============================================
 // パーティクルシステム
 // ============================================
+
+// ハードドロップ: 速度ライントレイルを描画
+function drawHardDropTrail(effect) {
+    for (let row = 0; row < effect.shape.length; row++) {
+        for (let col = 0; col < effect.shape[row].length; col++) {
+            if (effect.shape[row][col]) {
+                const cellX = (effect.x + col) * BLOCK_SIZE;
+                const trailTop = (effect.fromY + row) * BLOCK_SIZE;
+                const trailBottom = (effect.toY + row) * BLOCK_SIZE + BLOCK_SIZE;
+                const trailHeight = trailBottom - trailTop;
+                if (trailHeight <= 0) continue;
+
+                ctx.save();
+                const grad = ctx.createLinearGradient(0, trailTop, 0, trailBottom);
+                grad.addColorStop(0, 'transparent');
+                grad.addColorStop(0.4, effect.color + Math.round(effect.alpha * 0x66).toString(16).padStart(2, '0'));
+                grad.addColorStop(1, effect.color + Math.round(effect.alpha * 0xCC).toString(16).padStart(2, '0'));
+                ctx.fillStyle = grad;
+                ctx.globalAlpha = effect.alpha;
+                ctx.fillRect(cellX + 3, trailTop, BLOCK_SIZE - 6, trailHeight);
+
+                // 中央に細い光芯
+                ctx.globalAlpha = effect.alpha * 0.6;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(cellX + Math.floor(BLOCK_SIZE / 2) - 1, trailTop, 2, trailHeight);
+                ctx.restore();
+            }
+        }
+    }
+}
+
+// ハードドロップ: 着地インパクトパーティクル
+function createHardDropImpact(block) {
+    const canvasRect = canvas.getBoundingClientRect();
+    const scaleX = canvasRect.width / canvas.width;
+    const scaleY = canvasRect.height / canvas.height;
+
+    for (let row = 0; row < block.shape.length; row++) {
+        for (let col = 0; col < block.shape[row].length; col++) {
+            if (block.shape[row][col]) {
+                const bx = block.x + col;
+                const by = block.y + row;
+                const cx = canvasRect.left + (bx * BLOCK_SIZE + BLOCK_SIZE / 2) * scaleX;
+                const cy = canvasRect.top + ((by + 1) * BLOCK_SIZE) * scaleY;
+
+                for (let i = 0; i < 5; i++) {
+                    particles.push({
+                        x: cx + (Math.random() - 0.5) * BLOCK_SIZE * scaleX * 1.5,
+                        y: cy,
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: -(Math.random() * 9 + 3),
+                        size: Math.random() * 6 + 2,
+                        color: block.color,
+                        life: 1,
+                        decay: 0.04 + Math.random() * 0.04
+                    });
+                }
+            }
+        }
+    }
+}
+
+// ハードドロップ: キャンバスシェイク
+function shakeCanvas() {
+    canvas.classList.remove('hard-drop-shake');
+    void canvas.offsetWidth; // reflow でアニメーションをリセット
+    canvas.classList.add('hard-drop-shake');
+    setTimeout(() => canvas.classList.remove('hard-drop-shake'), 300);
+}
+
 function createLineParticles(lineY) {
     const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#a29bfe'];
     
@@ -1102,6 +1208,10 @@ function updateParticles() {
 function animationLoop() {
     if (particles.length > 0) {
         updateParticles();
+    }
+    // ハードドロップトレイルのフェードアウトを滑らかにする
+    if (hardDropEffect && gameRunning && !gamePaused) {
+        draw();
     }
     requestAnimationFrame(animationLoop);
 }
