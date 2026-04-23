@@ -486,6 +486,23 @@ html, body {
 }
 
 /* ============================================
+   ハードドロップ シェイクエフェクト
+   ============================================ */
+
+@keyframes hardDropShake {
+    0%   { transform: translate(0, 0); }
+    20%  { transform: translate(-4px, 3px); }
+    40%  { transform: translate(4px, -3px); }
+    60%  { transform: translate(-3px, 2px); }
+    80%  { transform: translate(3px, -2px); }
+    100% { transform: translate(0, 0); }
+}
+
+#game-canvas.hard-drop-shake {
+    animation: hardDropShake 0.28s ease-out;
+}
+
+/* ============================================
    スクロール防止
    ============================================ */
 
