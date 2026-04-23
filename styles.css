@@ -318,6 +318,44 @@ html, body {
     font-style: italic;
 }
 
+.maro-speech-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.maro-image {
+    width: 72px;
+    height: auto;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.speech-bubble {
+    position: relative;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 12px 15px;
+    font-size: 1rem;
+    font-style: italic;
+    color: #fff;
+    text-align: center;
+    max-width: 200px;
+}
+
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px 10px 8px 0;
+    border-style: solid;
+    border-color: transparent rgba(255, 255, 255, 0.15) transparent transparent;
+}
+
 /* ============================================
    クリア画面
    ============================================ */
