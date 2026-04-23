@@ -1072,15 +1072,15 @@ function drawHardDropTrail(effect) {
                 if (trailHeight <= 0) continue;
 
                 ctx.save();
+                ctx.globalAlpha = effect.alpha;
                 const grad = ctx.createLinearGradient(0, trailTop, 0, trailBottom);
                 grad.addColorStop(0, 'transparent');
-                grad.addColorStop(0.4, effect.color + Math.round(effect.alpha * 0x66).toString(16).padStart(2, '0'));
-                grad.addColorStop(1, effect.color + Math.round(effect.alpha * 0xCC).toString(16).padStart(2, '0'));
+                grad.addColorStop(0.4, effect.color);
+                grad.addColorStop(1, effect.color);
                 ctx.fillStyle = grad;
-                ctx.globalAlpha = effect.alpha;
                 ctx.fillRect(cellX + 3, trailTop, BLOCK_SIZE - 6, trailHeight);
 
-                // 中央に細い光芯
+                // 中央に細い光芯（残像感を強調）
                 ctx.globalAlpha = effect.alpha * 0.6;
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(cellX + Math.floor(BLOCK_SIZE / 2) - 1, trailTop, 2, trailHeight);
@@ -1124,7 +1124,8 @@ function createHardDropImpact(block) {
 // ハードドロップ: キャンバスシェイク
 function shakeCanvas() {
     canvas.classList.remove('hard-drop-shake');
-    void canvas.offsetWidth; // reflow でアニメーションをリセット
+    // CSS アニメーションを再トリガーするためにリフローを強制する
+    void canvas.offsetWidth;
     canvas.classList.add('hard-drop-shake');
     setTimeout(() => canvas.classList.remove('hard-drop-shake'), 300);
 }
