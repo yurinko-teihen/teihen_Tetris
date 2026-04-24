@@ -542,9 +542,6 @@ function hardDrop() {
 
         // 着地インパクトパーティクル
         createHardDropImpact(currentBlock);
-
-        // キャンバスシェイク
-        shakeCanvas();
     }
     
     // 即座に設置
