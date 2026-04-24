@@ -46,6 +46,12 @@ let hardDropEffect = null;
 const maroImage = new Image();
 maroImage.src = 'resources/images/maro.png';
 
+// マロ爆発警告エフェクト
+let maroWarningCells = null;
+let maroWarningStartTime = 0;
+const MARO_WARNING_DURATION = 500; // ms（点滅してから爆発するまでの時間）
+const MARO_WARNING_FLASH_INTERVAL = 80; // ms（点滅の速さ）
+
 // ============================================
 // 初期化
 // ============================================
@@ -407,7 +413,8 @@ function gameLoop() {
         // ブロック着地
         audioManager.playLand();
         if (currentBlock.isMaro) {
-            maroExplosion();
+            startMaroExplosion();
+            return;
         } else {
             placeBlock();
         }
@@ -546,7 +553,8 @@ function hardDrop() {
     
     // 即座に設置
     if (currentBlock.isMaro) {
-        maroExplosion();
+        startMaroExplosion();
+        return;
     } else {
         placeBlock();
     }
@@ -618,6 +626,58 @@ function placeBlock() {
 // ============================================
 // マロ爆発処理（自分含む周囲8ブロックを破壊）
 // ============================================
+
+// マロ爆発後の共通処理（ライン消し → 次ブロック生成 → ゲーム再開）
+function afterMaroExplosion() {
+    const clearedLines = checkLines();
+    if (clearedLines > 0) {
+        handleLineClear(clearedLines);
+    }
+    currentBlock = nextBlock;
+    nextBlock = createNewBlock();
+    drawNextPiece();
+    if (!isValidPosition(currentBlock, currentBlock.x, currentBlock.y)) {
+        gameOver();
+        return;
+    }
+    startGameLoop();
+    draw();
+}
+
+// マロ爆発予告（点滅エフェクト付き）
+function startMaroExplosion() {
+    const cx = currentBlock.x;
+    const cy = currentBlock.y;
+
+    // 破壊対象のセルを収集（3×3範囲）
+    const cells = [];
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+                cells.push({ x: nx, y: ny });
+            }
+        }
+    }
+
+    maroWarningCells = cells;
+    maroWarningStartTime = Date.now();
+
+    // ゲームループを一時停止して爆発アニメーションの時間を確保
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+
+    setTimeout(() => {
+        maroWarningCells = null;
+        if (!gameRunning) return;
+        maroExplosion();
+        afterMaroExplosion();
+    }, MARO_WARNING_DURATION);
+}
+
 function maroExplosion() {
     const cx = currentBlock.x;
     const cy = currentBlock.y;
@@ -922,6 +982,24 @@ function draw() {
         drawBlock(currentBlock, currentBlock.x, currentBlock.y);
     }
     
+    // マロ爆発警告エフェクト（対象セルを点滅ハイライト）
+    if (maroWarningCells) {
+        const elapsed = Date.now() - maroWarningStartTime;
+        const flashAlpha = 0.3 + 0.5 * Math.abs(Math.sin(elapsed / MARO_WARNING_FLASH_INTERVAL * Math.PI));
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 120, 0, ${flashAlpha})`;
+        for (const cell of maroWarningCells) {
+            ctx.fillRect(cell.x * BLOCK_SIZE + 1, cell.y * BLOCK_SIZE + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        }
+        // 枠線で強調
+        ctx.strokeStyle = `rgba(255, 255, 0, ${flashAlpha})`;
+        ctx.lineWidth = 2;
+        for (const cell of maroWarningCells) {
+            ctx.strokeRect(cell.x * BLOCK_SIZE + 2, cell.y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4);
+        }
+        ctx.restore();
+    }
+    
     // パーティクル更新・描画
     updateParticles();
 }
@@ -1217,6 +1295,10 @@ function animationLoop() {
     }
     // ハードドロップトレイルのフェードアウトを滑らかにする
     if (hardDropEffect && gameRunning && !gamePaused) {
+        draw();
+    }
+    // マロ爆発警告中は点滅アニメーションのために継続描画
+    if (maroWarningCells) {
         draw();
     }
     requestAnimationFrame(animationLoop);
