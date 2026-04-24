@@ -790,18 +790,9 @@ function gameClear() {
     document.getElementById('clear-score').textContent = score;
     document.getElementById('clear-lines').textContent = totalLinesCleared;
     
-    // ボタンを無効化してから画面を表示（誤操作防止）
-    const clearScreen = document.getElementById('clear-screen');
-    const buttons = clearScreen.querySelectorAll('.menu-btn');
-    buttons.forEach(btn => {
-        btn.classList.add('btn-disabled');
-        btn.classList.remove('btn-appear');
-    });
-    
-    // 少し遅らせてクリア画面を表示し、カウントダウン開始
+    // 少し遅らせてクリア画面を表示
     setTimeout(() => {
-        clearScreen.classList.remove('hidden');
-        startClearCountdown(3, buttons);
+        document.getElementById('clear-screen').classList.remove('hidden');
     }, 600);
 }
 
@@ -833,30 +824,6 @@ function createFireworksParticles(centerX, centerY) {
             decay: 0.01 + Math.random() * 0.015
         });
     }
-}
-
-// クリアカウントダウン（指定秒後にボタンを有効化）
-function startClearCountdown(seconds, buttons) {
-    const countdownEl = document.getElementById('clear-countdown');
-    
-    const tick = (remaining) => {
-        if (remaining > 0) {
-            countdownEl.textContent = remaining;
-            countdownEl.classList.remove('countdown-tick');
-            void countdownEl.offsetWidth; // reflow でアニメーションをリセット
-            countdownEl.classList.add('countdown-tick');
-            audioManager.playTone(880 - (seconds - remaining) * 150, 0.15, 'sine', 0.2);
-            setTimeout(() => tick(remaining - 1), 1000);
-        } else {
-            countdownEl.textContent = '';
-            buttons.forEach((btn, i) => {
-                btn.classList.remove('btn-disabled');
-                setTimeout(() => btn.classList.add('btn-appear'), i * 80);
-            });
-            audioManager.playTone(1047, 0.3, 'sine', 0.25);
-        }
-    };
-    tick(seconds);
 }
 
 // ============================================
