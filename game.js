@@ -887,13 +887,15 @@ function updateEnemyHpBar() {
     }
 }
 
+const DAMAGE_FLASH_DURATION = 150; // ms — matches CSS transition (0.15s)
+
 function damageEnemy() {
     const img = document.getElementById('enemy-image');
     if (!img) return;
     img.classList.remove('damage-flash');
-    void img.offsetWidth;
+    void img.offsetWidth; // reflow to restart CSS animation
     img.classList.add('damage-flash');
-    setTimeout(() => img.classList.remove('damage-flash'), 200);
+    setTimeout(() => img.classList.remove('damage-flash'), DAMAGE_FLASH_DURATION);
     updateEnemyHpBar();
 }
 
