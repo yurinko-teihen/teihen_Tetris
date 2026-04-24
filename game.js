@@ -184,10 +184,10 @@ function moveTouchPosition(touchStartX, touchCurrentX, blockStartX) {
     const canvasRect = canvas.getBoundingClientRect();
     const blockWidth = currentBlock.shape[0].length;
 
-    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換（90%以上ずれたら1マス移動）
+    // 1セル分のピクセル幅を求め、スライド量をカラム数に変換（1マス分以上ずれたら1マス移動）
     const cellWidth = canvasRect.width / COLS;
     const rawDelta = touchCurrentX - touchStartX;
-    const deltaCols = Math.sign(rawDelta) * Math.floor(Math.abs(rawDelta) / cellWidth + 0.1);
+    const deltaCols = Math.sign(rawDelta) * Math.floor(Math.abs(rawDelta) / cellWidth);
     const targetX = Math.max(0, Math.min(COLS - blockWidth, blockStartX + deltaCols));
 
     if (targetX === currentBlock.x) return;
@@ -235,7 +235,7 @@ function setupSwipeControls() {
         const deltaX = touchX - touchStartX;
 
         // 下スワイプを検知したらフラグを立てて以降の横移動を禁止
-        if (deltaY > 20 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        if (deltaY > 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
             isDownSwipe = true;
         }
         if (isDownSwipe) return;
@@ -254,10 +254,10 @@ function setupSwipeControls() {
 
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        const minSwipeDistance = 60;
+        const minSwipeDistance = 100;
 
         // 短いタップ（移動なし）→ 回転
-        if (!touchMoved && touchDuration < 300 && Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) {
+        if (!touchMoved && touchDuration < 200 && Math.abs(deltaX) < 15 && Math.abs(deltaY) < 15) {
             rotateBlock();
             return;
         }
