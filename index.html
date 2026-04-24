@@ -51,9 +51,9 @@
 
     <!-- ゲーム画面 -->
     <div id="game-screen" class="screen hidden">
-        <div class="game-layout">
-            <!-- 左サイドパネル -->
-            <div class="side-panel left-panel">
+        <!-- 上部ステータスバー -->
+        <div class="game-top-bar">
+            <div class="top-stats-left">
                 <div class="stat-box">
                     <span class="stat-label">LEVEL</span>
                     <span id="level" class="stat-value">1</span>
@@ -62,24 +62,31 @@
                     <span class="stat-label">LINE</span>
                     <span id="lines" class="stat-value">0/10</span>
                 </div>
-            </div>
-
-            <!-- ゲームボード -->
-            <div class="game-board-wrapper">
-                <canvas id="game-canvas"></canvas>
-            </div>
-
-            <!-- 右サイドパネル -->
-            <div class="side-panel right-panel">
-                <div class="next-piece-container">
-                    <span class="next-label">NEXT</span>
-                    <canvas id="next-canvas"></canvas>
-                </div>
                 <div class="stat-box">
                     <span class="stat-label">SCORE</span>
                     <span id="score" class="stat-value">0</span>
                 </div>
             </div>
+            <div class="top-stats-right">
+                <div class="next-piece-container">
+                    <span class="next-label">NEXT</span>
+                    <canvas id="next-canvas"></canvas>
+                </div>
+                <div class="enemy-container" id="enemy-container">
+                    <span class="enemy-label">エネミー</span>
+                    <div class="enemy-image-wrap">
+                        <img id="enemy-image" src="resources/images/maro.png" alt="エネミー">
+                    </div>
+                    <div class="enemy-hp-bar-wrap">
+                        <div id="enemy-hp-bar" class="enemy-hp-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲームボード -->
+        <div class="game-board-wrapper">
+            <canvas id="game-canvas"></canvas>
         </div>
 
         <div class="touch-hint" id="touch-hint">
