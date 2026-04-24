@@ -27,6 +27,10 @@ let totalLinesCleared = 0;
 const MAX_LEVEL = 10;
 const LINES_PER_LEVEL = 10;
 
+// エネミー関連
+let enemyHp = LINES_PER_LEVEL;
+let enemyMaxHp = LINES_PER_LEVEL;
+
 // 落下速度（レベルに応じて変化）
 function getDropSpeed() {
     return Math.max(100, 800 - (level - 1) * 70);
@@ -78,18 +82,19 @@ function resizeCanvas() {
     const gameScreen = document.getElementById('game-screen');
     if (!gameScreen || gameScreen.classList.contains('hidden')) return;
     
-    const layout = document.querySelector('.game-layout');
-    const leftPanel = document.querySelector('.left-panel');
-    const rightPanel = document.querySelector('.right-panel');
-    if (!layout || !leftPanel || !rightPanel) return;
+    const topBar = document.querySelector('.game-top-bar');
+    const touchHint = document.querySelector('.touch-hint');
+    const boardWrapper = document.querySelector('.game-board-wrapper');
+    if (!topBar || !boardWrapper) return;
     
-    // サイドパネルの幅とギャップから使用可能な幅を算出
-    const layoutWidth = layout.clientWidth;
-    const leftWidth = leftPanel.getBoundingClientRect().width;
-    const rightWidth = rightPanel.getBoundingClientRect().width;
-    const layoutGap = 4; // CSSのgapに対応
-    const maxWidth = layoutWidth - leftWidth - rightWidth - (layoutGap * 2);
-    const maxHeight = layout.clientHeight;
+    const screenH = gameScreen.clientHeight;
+    const screenW = gameScreen.clientWidth;
+    const topBarH = topBar.getBoundingClientRect().height || 70;
+    const hintH = (touchHint && getComputedStyle(touchHint).display !== 'none')
+        ? (touchHint.getBoundingClientRect().height || 20) : 0;
+    const gap = 8; // padding + gap
+    const maxHeight = screenH - topBarH - hintH - gap;
+    const maxWidth = screenW - 8;
     
     const scaleH = maxHeight / (ROWS * BLOCK_SIZE);
     const scaleW = maxWidth / (COLS * BLOCK_SIZE);
@@ -333,6 +338,8 @@ function startGame() {
     totalLinesCleared = 0;
     gameBoard = createEmptyBoard();
     particles = [];
+    enemyHp = LINES_PER_LEVEL;
+    enemyMaxHp = LINES_PER_LEVEL;
     
     // UI更新
     updateUI();
@@ -698,6 +705,10 @@ function handleLineClear(lines) {
     linesCleared += lines;
     totalLinesCleared += lines;
     
+    // エネミーにダメージ
+    enemyHp -= lines;
+    damageEnemy();
+    
     // 効果音
     audioManager.playLineClear(lines);
     
@@ -705,6 +716,8 @@ function handleLineClear(lines) {
     if (linesCleared >= LINES_PER_LEVEL) {
         linesCleared -= LINES_PER_LEVEL;
         level++;
+        enemyHp = LINES_PER_LEVEL;
+        enemyMaxHp = LINES_PER_LEVEL;
         
         if (level > MAX_LEVEL) {
             // ゲームクリア
@@ -856,6 +869,32 @@ function updateUI() {
     document.getElementById('score').textContent = score;
     document.getElementById('level').textContent = level;
     document.getElementById('lines').textContent = `${linesCleared}/${LINES_PER_LEVEL}`;
+    updateEnemyHpBar();
+}
+
+function updateEnemyHpBar() {
+    const bar = document.getElementById('enemy-hp-bar');
+    if (!bar) return;
+    const pct = Math.max(0, Math.min(100, (enemyHp / enemyMaxHp) * 100));
+    bar.style.width = `${pct}%`;
+    // HP残量で色変化
+    if (pct > 50) {
+        bar.style.background = 'linear-gradient(90deg, #ff4444, #ff9933)';
+    } else if (pct > 25) {
+        bar.style.background = 'linear-gradient(90deg, #ff2200, #ff6600)';
+    } else {
+        bar.style.background = 'linear-gradient(90deg, #cc0000, #ff2200)';
+    }
+}
+
+function damageEnemy() {
+    const img = document.getElementById('enemy-image');
+    if (!img) return;
+    img.classList.remove('damage-flash');
+    void img.offsetWidth;
+    img.classList.add('damage-flash');
+    setTimeout(() => img.classList.remove('damage-flash'), 200);
+    updateEnemyHpBar();
 }
 
 
