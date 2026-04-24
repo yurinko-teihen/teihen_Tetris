@@ -753,7 +753,7 @@ function getRandomGameoverQuote() {
         9: '目眩がする',
         10: '頭痛くなってきた'
     };
-    return quotes[level] || 'あんぼ';
+    return quotes[level] || 'あんぽ';
 }
 
 function gameOver() {
