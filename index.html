@@ -69,21 +69,25 @@
                     <span class="stat-label">LINE</span>
                     <span id="lines" class="stat-value">0/10</span>
                 </div>
-            </div>
-            <div class="top-stats-right">
                 <div class="next-piece-container">
                     <span class="next-label">NEXT</span>
                     <canvas id="next-canvas"></canvas>
                 </div>
+            </div>
+            <div class="top-stats-right">
                 <div class="enemy-container" id="enemy-container">
                     <span class="enemy-label">エネミー</span>
-                    <div class="enemy-image-wrap">
-                        <img id="enemy-image" src="resources/images/maro.png" alt="エネミー">
+                    <div class="enemy-main-row">
+                        <div class="enemy-speech-bubble" id="enemy-speech">あんぽ</div>
+                        <div class="enemy-visual">
+                            <div class="enemy-image-wrap">
+                                <img id="enemy-image" src="resources/images/maro.png" alt="エネミー">
+                            </div>
+                            <div class="enemy-hp-bar-wrap">
+                                <div id="enemy-hp-bar" class="enemy-hp-bar"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="enemy-hp-bar-wrap">
-                        <div id="enemy-hp-bar" class="enemy-hp-bar"></div>
-                    </div>
-                    <div class="enemy-speech-bubble" id="enemy-speech">あんぽ</div>
                 </div>
             </div>
         </div>
