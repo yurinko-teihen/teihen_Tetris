@@ -832,10 +832,13 @@ function createFireworksParticles(centerX, centerY) {
 // UI更新
 // ============================================
 function updateUI() {
-    document.getElementById('score').textContent = score;
     document.getElementById('level').textContent = level;
     document.getElementById('lines').textContent = `${linesCleared}/${LINES_PER_LEVEL}`;
     updateEnemyHpBar();
+    const speechEl = document.getElementById('enemy-speech');
+    if (speechEl) {
+        speechEl.textContent = getRandomGameoverQuote();
+    }
 }
 
 function updateEnemyHpBar() {
