@@ -221,6 +221,8 @@ function setupSwipeControls() {
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類への伝播は無視
         if (e.target.closest('.game-top-bar')) return;
+        // マルチタッチ時は追加タッチを無視（下スワイプ状態をリセットしない）
+        if (e.touches.length > 1) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
@@ -268,6 +270,9 @@ function setupSwipeControls() {
     gameScreen.addEventListener('touchend', (e) => {
         if (!gameRunning || gamePaused) return;
         if (e.target.closest('.game-top-bar')) return;
+
+        // まだ指が残っている場合は処理しない（マルチタッチ中の誤検知を防ぐ）
+        if (e.touches.length > 0) return;
 
         // 下スライド終了 → 通常速度に戻す
         if (isDownSwipe) {
