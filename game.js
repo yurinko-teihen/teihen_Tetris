@@ -243,6 +243,10 @@ function setupSwipeControls() {
             touchStartX = touchX;
             touchStartY = touchY;
             blockStartX = currentBlock ? currentBlock.x : 0;
+            // 下スワイプ中にブロックが着地した場合、加速インターバルを通常速度に戻す
+            if (isDownSwipe) {
+                startGameLoop();
+            }
             isDownSwipe = false;
             touchMoved = false;
         }
