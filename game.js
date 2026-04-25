@@ -19,6 +19,9 @@ let gameInterval = null;
 let gameRunning = false;
 let gamePaused = false;
 
+// ブロック交代フラグ（タッチ状態リセット用）
+let blockPlacedFlag = 0;
+
 // スコア関連
 let score = 0;
 let level = 1;
@@ -213,6 +216,7 @@ function setupSwipeControls() {
     let touchMoved = false;
     let isDownSwipe = false;
     let blockStartX = 0;
+    let lastBlockPlacedFlag = 0;
 
     gameScreen.addEventListener('touchstart', (e) => {
         // ボタン類への伝播は無視
@@ -223,6 +227,7 @@ function setupSwipeControls() {
         touchMoved = false;
         isDownSwipe = false;
         blockStartX = currentBlock ? currentBlock.x : 0;
+        lastBlockPlacedFlag = blockPlacedFlag;
     }, { passive: true });
 
     gameScreen.addEventListener('touchmove', (e) => {
@@ -231,8 +236,18 @@ function setupSwipeControls() {
 
         const touchX = e.touches[0].clientX;
         const touchY = e.touches[0].clientY;
+
+        // ブロックが切り替わった場合、タッチ基準位置をリセット
+        if (blockPlacedFlag !== lastBlockPlacedFlag) {
+            lastBlockPlacedFlag = blockPlacedFlag;
+            touchStartX = touchX;
+            touchStartY = touchY;
+            blockStartX = currentBlock ? currentBlock.x : 0;
+            isDownSwipe = false;
+            touchMoved = false;
+        }
+
         const deltaY = touchY - touchStartY;
-        const deltaX = touchX - touchStartX;
 
         // 下スライドを検知したらフラグを立てて落下速度を上げる（横スライド中でも受け付ける）
         if (deltaY > 40 && !isDownSwipe) {
@@ -422,6 +437,7 @@ function gameLoop() {
         // 次のブロック
         currentBlock = nextBlock;
         nextBlock = createNewBlock();
+        blockPlacedFlag++;
         drawNextPiece();
         
         // ゲームオーバー判定
@@ -561,6 +577,7 @@ function hardDrop() {
     // 次のブロック
     currentBlock = nextBlock;
     nextBlock = createNewBlock();
+    blockPlacedFlag++;
     drawNextPiece();
     
     // ゲームオーバー判定
