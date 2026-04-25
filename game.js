@@ -234,9 +234,14 @@ function setupSwipeControls() {
         const deltaY = touchY - touchStartY;
         const deltaX = touchX - touchStartX;
 
-        // 下スワイプを検知したらフラグを立てて以降の横移動を禁止
+        // 下スライドを検知したらフラグを立てて落下速度を上げる
         if (deltaY > 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
-            isDownSwipe = true;
+            if (!isDownSwipe) {
+                isDownSwipe = true;
+                clearInterval(gameInterval);
+                gameInterval = setInterval(gameLoop, 50);
+            }
+            return;
         }
         if (isDownSwipe) return;
 
@@ -248,23 +253,23 @@ function setupSwipeControls() {
         if (!gameRunning || gamePaused) return;
         if (e.target.closest('.game-top-bar')) return;
 
+        // 下スライド終了 → 通常速度に戻す
+        if (isDownSwipe) {
+            startGameLoop();
+            return;
+        }
+
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
         const touchDuration = Date.now() - touchStartTime;
 
         const deltaX = touchEndX - touchStartX;
         const deltaY = touchEndY - touchStartY;
-        const minSwipeDistance = 100;
 
         // 短いタップ（移動なし）→ 回転
         if (!touchMoved && touchDuration < 200 && Math.abs(deltaX) < 15 && Math.abs(deltaY) < 15) {
             rotateBlock();
             return;
-        }
-
-        // 下スワイプ → 即落下
-        if (deltaY > minSwipeDistance && deltaY > 1.5 * Math.abs(deltaX)) {
-            hardDrop();
         }
     }, { passive: true });
 }
