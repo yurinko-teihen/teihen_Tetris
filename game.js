@@ -234,17 +234,14 @@ function setupSwipeControls() {
         const deltaY = touchY - touchStartY;
         const deltaX = touchX - touchStartX;
 
-        // 下スライドを検知したらフラグを立てて落下速度を上げる
-        if (deltaY > 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
-            if (!isDownSwipe) {
-                isDownSwipe = true;
-                clearInterval(gameInterval);
-                gameInterval = setInterval(gameLoop, 50);
-            }
-            return;
+        // 下スライドを検知したらフラグを立てて落下速度を上げる（横スライド中でも受け付ける）
+        if (deltaY > 40 && !isDownSwipe) {
+            isDownSwipe = true;
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, 50);
         }
-        if (isDownSwipe) return;
 
+        // 横スライド処理（下スライド中でも受け付ける）
         touchMoved = true;
         moveTouchPosition(touchStartX, touchX, blockStartX);
     }, { passive: true });
