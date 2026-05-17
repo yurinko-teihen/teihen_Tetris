@@ -8,7 +8,7 @@
 const COLS = 10;
 const ROWS = 20;
 const BLOCK_SIZE = 28; // ピクセル
-const NEXT_BLOCK_SIZE = 8; // サイドパネルに収まるサイズ（小さめ）
+const NEXT_BLOCK_SIZE = 6; // サイドパネルに収まるサイズ（小さめ）
 
 // ゲーム状態
 let canvas, ctx, nextCanvas, nextCtx, particleCanvas, particleCtx;
@@ -175,6 +175,14 @@ function initEventListeners() {
     
     // キーボード操作（PC用）
     document.addEventListener('keydown', handleKeyDown);
+    
+    // ランキングボタン
+    const rankingBtn = document.getElementById('ranking-btn');
+    if (rankingBtn) {
+        rankingBtn.addEventListener('click', () => {
+            audioManager.playUIClick();
+        });
+    }
     
     // スワイプ操作
     setupSwipeControls();
@@ -860,6 +868,7 @@ function createFireworksParticles(centerX, centerY) {
 function updateUI() {
     document.getElementById('level').textContent = level;
     document.getElementById('lines').textContent = `${linesCleared}/${LINES_PER_LEVEL}`;
+    document.getElementById('score-display').textContent = score;
     updateEnemyHpBar();
     const speechEl = document.getElementById('enemy-speech');
     if (speechEl) {
